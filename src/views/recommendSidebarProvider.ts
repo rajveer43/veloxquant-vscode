@@ -32,23 +32,39 @@ export class RecommendSidebarProvider implements vscode.WebviewViewProvider {
       localResourceRoots: [vscode.Uri.joinPath(this.extensionUri, 'dist', 'webview-ui')],
     };
 
-    webview.html = this.renderHtml(webview);
+    void this.renderHtml(webview).then((html) => {
+      webview.html = html;
+    });
 
     webview.onDidReceiveMessage((message: { type: string; [key: string]: unknown }) => {
       void this.handleMessage(message);
     });
   }
 
-  private renderHtml(webview: vscode.Webview): string {
+  /**
+   * Loads the authored index.html (single source of truth for the form
+   * markup — also used by unit/integration tests) and substitutes the
+   * webview-safe URIs and CSP nonce placeholders it declares.
+   */
+  private async renderHtml(webview: vscode.Webview): Promise<string> {
     const nonce = String(Math.random()).slice(2);
     const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'dist', 'webview-ui', 'recommend.js'));
     const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'dist', 'webview-ui', 'recommend.css'));
+    const htmlUri = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webview-ui', 'recommend.html');
+
     const csp = [
       `default-src 'none'`,
       `img-src ${webview.cspSource}`,
       `style-src ${webview.cspSource}`,
       `script-src 'nonce-${nonce}'`,
     ].join('; ');
+
+    const bytes = await vscode.workspace.fs.readFile(htmlUri);
+    const body = Buffer.from(bytes)
+      .toString('utf8')
+      .replace('{{styleUri}}', styleUri.toString())
+      .replace('{{scriptUri}}', scriptUri.toString())
+      .replace(/\{\{nonce\}\}/g, nonce);
 
     return `<!doctype html>
 <html lang="en">
@@ -57,97 +73,11 @@ export class RecommendSidebarProvider implements vscode.WebviewViewProvider {
   <meta http-equiv="Content-Security-Policy" content="${csp}" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>VeloxQuant-MLX Recommend</title>
-  <link rel="stylesheet" href="${styleUri}" />
 </head>
 <body>
-${this.bodyHtml(scriptUri, nonce)}
+${body}
 </body>
 </html>`;
-  }
-
-  private bodyHtml(scriptUri: vscode.Uri, nonce: string): string {
-    // The static form markup lives in webview-ui/recommend/index.html at
-    // author time; esbuild does not process HTML, so we inline the body
-    // markup directly here to keep a single source of truth for the script
-    // tag wiring while the form fields are authored in index.html for
-    // reference/tests. Both are kept in sync manually (small, stable form).
-    return `<div id="app">
-  <div id="platform-notice" class="notice notice-warning" hidden></div>
-
-  <form id="recommend-form">
-    <fieldset>
-      <legend>Chip</legend>
-      <div id="chip-group" class="segmented" role="radiogroup" aria-label="Chip">
-        <label><input type="radio" name="chip" value="M1" /> M1</label>
-        <label><input type="radio" name="chip" value="M2" /> M2</label>
-        <label><input type="radio" name="chip" value="M3" /> M3</label>
-        <label><input type="radio" name="chip" value="M4" checked /> M4</label>
-      </div>
-    </fieldset>
-
-    <div class="field">
-      <label for="ram-gb">RAM (GB)</label>
-      <select id="ram-gb" name="ramGb" required>
-        <option value="8">8</option>
-        <option value="16" selected>16</option>
-        <option value="24">24</option>
-        <option value="32">32</option>
-        <option value="36">36</option>
-        <option value="48">48</option>
-        <option value="64">64</option>
-        <option value="128">128</option>
-      </select>
-    </div>
-
-    <div class="field">
-      <label for="model-class">Model class</label>
-      <select id="model-class" name="modelClass" required>
-        <option value="1B">1B</option>
-        <option value="3B">3B</option>
-        <option value="7B" selected>7B</option>
-        <option value="14B">14B</option>
-        <option value="32B">32B</option>
-      </select>
-    </div>
-
-    <div class="field">
-      <label for="goal">Goal</label>
-      <select id="goal" name="goal" required>
-        <option value="everyday" selected>Everyday — safe default, no setup</option>
-        <option value="max_key_accounting">Max key accounting — squeeze the key cache hardest</option>
-        <option value="max_context">Fit the longest conversation — compress the whole cache</option>
-        <option value="best_quality">Best quality — minimize compression side effects</option>
-        <option value="constant_memory">Never grow past a fixed memory limit</option>
-      </select>
-    </div>
-
-    <details id="advanced">
-      <summary>Advanced</summary>
-      <div class="field">
-        <label for="seq-len">Sequence length</label>
-        <input type="number" id="seq-len" name="seqLen" min="1" placeholder="default" />
-      </div>
-      <div class="field">
-        <label for="n-layers">Number of layers</label>
-        <input type="number" id="n-layers" name="nLayers" min="1" placeholder="default" />
-      </div>
-      <div class="field">
-        <label for="n-kv-heads">KV heads</label>
-        <input type="number" id="n-kv-heads" name="nKvHeads" min="1" placeholder="default" />
-      </div>
-      <div class="field">
-        <label for="head-dim">Head dimension</label>
-        <input type="number" id="head-dim" name="headDim" min="1" placeholder="default" />
-      </div>
-    </details>
-
-    <button type="submit" id="submit-btn">Get recommendation</button>
-  </form>
-
-  <div id="result" hidden></div>
-  <div id="error-area" hidden></div>
-</div>
-<script nonce="${nonce}" src="${scriptUri}"></script>`;
   }
 
   private post(message: unknown): void {

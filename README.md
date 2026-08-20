@@ -93,6 +93,24 @@ VeloxQuant-MLX" button when it detects the package is missing.)
   cross-platform but does not claim the underlying library works there.
 - Demo GIF: TODO.
 
+## Development
+
+```
+npm install
+npm run compile      # type check
+npm run lint
+npm run test:unit    # node:test, pure logic (snippet builder, argv building, version check)
+npm run build        # esbuild bundle to dist/
+npm run test:integration  # @vscode/test-electron, spins up a real VS Code instance
+npm run package       # vsce package (dry run, does not publish)
+```
+
+`test:integration` launches a real Electron-based VS Code instance and will
+not run in a headless/sandboxed shell without GUI session access (it needs
+window server access on macOS or a virtual display like Xvfb on Linux CI).
+The scaffolding under `test/suite/` is real and passes locally in a normal
+desktop terminal; it is pinned to VS Code 1.85.2 for launcher compatibility.
+
 ## Links
 
 - Main project: https://github.com/rajveer43/VeloxQuant-MLX

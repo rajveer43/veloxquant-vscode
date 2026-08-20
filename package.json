@@ -38,6 +38,7 @@
   "main": "./dist/extension.js",
   "activationEvents": [
     "onView:veloxquant.recommendSidebar",
+    "onView:veloxquant.playgroundLauncher",
     "onCommand:veloxquant.openPlaygroundEditor"
   ],
   "contributes": {
@@ -47,6 +48,11 @@
           "id": "veloxquant",
           "title": "VeloxQuant-MLX",
           "icon": "media/activitybar-icon.svg"
+        },
+        {
+          "id": "veloxquantPlayground",
+          "title": "VeloxQuant-MLX Compression Lab",
+          "icon": "media/playground-activitybar-icon.svg"
         }
       ]
     },
@@ -57,6 +63,14 @@
           "name": "Recommend",
           "type": "webview",
           "icon": "media/activitybar-icon.svg"
+        }
+      ],
+      "veloxquantPlayground": [
+        {
+          "id": "veloxquant.playgroundLauncher",
+          "name": "Compression Lab",
+          "type": "webview",
+          "icon": "media/playground-activitybar-icon.svg"
         }
       ]
     },
@@ -120,7 +134,7 @@
     "@types/vscode": "^1.85.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
-    "@vscode/test-electron": "^2.3.9",
+    "@vscode/test-electron": "^3.1.0",
     "@vscode/vsce": "^2.24.0",
     "esbuild": "^0.20.0",
     "eslint": "^8.56.0",

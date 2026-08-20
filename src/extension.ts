@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { RecommendSidebarProvider } from './views/recommendSidebarProvider';
 import { PlaygroundPanel } from './views/playgroundPanel';
+import { PlaygroundLauncherProvider } from './views/playgroundLauncherProvider';
 import { PanelServerManager } from './server/panelServerManager';
 import { resolveInterpreter, promptSelectInterpreter } from './python/interpreter';
 
@@ -10,6 +11,10 @@ export function activate(context: vscode.ExtensionContext): void {
   const provider = new RecommendSidebarProvider(context.extensionUri);
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(RecommendSidebarProvider.viewType, provider)
+  );
+
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(PlaygroundLauncherProvider.viewType, new PlaygroundLauncherProvider())
   );
 
   context.subscriptions.push(

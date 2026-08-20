@@ -8,16 +8,17 @@ const path = require('path');
 const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
 
-function copyCss() {
+function copyStaticAssets() {
   const pairs = [
     ['src/webview-ui/recommend/style.css', 'dist/webview-ui/recommend.css'],
     ['src/webview-ui/playground/style.css', 'dist/webview-ui/playground.css'],
+    ['src/webview-ui/recommend/index.html', 'dist/webview-ui/recommend.html'],
   ];
   for (const [src, dest] of pairs) {
     fs.mkdirSync(path.dirname(dest), { recursive: true });
     fs.copyFileSync(src, dest);
   }
-  console.log('[build] copied webview CSS');
+  console.log('[build] copied webview static assets');
 }
 
 /** @type {import('esbuild').Plugin} */
@@ -80,13 +81,13 @@ async function main() {
 
   const allCtx = [extensionCtx, ...webviewCtxs];
 
-  copyCss();
+  copyStaticAssets();
 
   if (watch) {
     await Promise.all(allCtx.map((ctx) => ctx.watch()));
     fs.watch('src/webview-ui', { recursive: true }, (_event, filename) => {
-      if (filename && filename.endsWith('.css')) {
-        copyCss();
+      if (filename && (filename.endsWith('.css') || filename.endsWith('.html'))) {
+        copyStaticAssets();
       }
     });
   } else {

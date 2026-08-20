@@ -38,16 +38,6 @@ export class PlaygroundPanel {
     }, undefined, this.disposables);
 
     this.panel.onDidDispose(() => void this.handleDispose(), undefined, this.disposables);
-
-    this.addOpenInBrowserAction();
-  }
-
-  private addOpenInBrowserAction(): void {
-    // VS Code webview panels don't have a native title-bar action API for
-    // arbitrary buttons pre-1.74 in all contexts; we surface "open in
-    // system browser" as a command available from the command palette and
-    // as an in-webview button (rendered by the unavailable/local states),
-    // and also register it against the panel's context via a command.
   }
 
   private renderHtml(): string {
@@ -61,7 +51,7 @@ export class PlaygroundPanel {
 
     const csp = [
       `default-src 'none'`,
-      `style-src ${webview.cspSource} 'unsafe-inline'`,
+      `style-src ${webview.cspSource}`,
       `script-src 'nonce-${nonce}'`,
       `frame-src ${originSource}`,
       `connect-src ${originSource}`,
