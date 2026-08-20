@@ -1,0 +1,132 @@
+{
+  "name": "veloxquant-vscode",
+  "displayName": "VeloxQuant-MLX",
+  "description": "Recommend KV-cache compression methods and run the VeloxQuant-MLX compression lab for mlx_lm models on Apple Silicon, without leaving VS Code.",
+  "version": "0.1.0",
+  "publisher": "veloxquant",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Machine Learning",
+    "Snippets",
+    "Other"
+  ],
+  "keywords": [
+    "mlx",
+    "apple silicon",
+    "quantization",
+    "kv cache",
+    "llm",
+    "on-device",
+    "mlx_lm",
+    "m1",
+    "m2",
+    "m3",
+    "m4"
+  ],
+  "icon": "media/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rajveer43/veloxquant-vscode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rajveer43/veloxquant-vscode/issues"
+  },
+  "homepage": "https://github.com/rajveer43/veloxquant-vscode#readme",
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onView:veloxquant.recommendSidebar",
+    "onCommand:veloxquant.openPlaygroundEditor"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "veloxquant",
+          "title": "VeloxQuant-MLX",
+          "icon": "media/activitybar-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "veloxquant": [
+        {
+          "id": "veloxquant.recommendSidebar",
+          "name": "Recommend",
+          "type": "webview",
+          "icon": "media/activitybar-icon.svg"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "veloxquant.openPlaygroundEditor",
+        "title": "VeloxQuant-MLX: Open Compression Lab",
+        "category": "VeloxQuant-MLX",
+        "icon": "media/activitybar-icon.svg"
+      },
+      {
+        "command": "veloxquant.refreshRecommend",
+        "title": "VeloxQuant-MLX: Refresh Recommendation Form",
+        "category": "VeloxQuant-MLX"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "veloxquant.openPlaygroundEditor",
+          "when": "view == veloxquant.recommendSidebar",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "VeloxQuant-MLX",
+      "properties": {
+        "veloxquant.pythonPath": {
+          "type": "string",
+          "default": "",
+          "description": "Explicit path to a Python interpreter with VeloxQuant-MLX installed. Leave blank to use the interpreter selected via the Python extension."
+        },
+        "veloxquant.panelPort": {
+          "type": "number",
+          "default": 7860,
+          "description": "Port for the local VeloxQuant-MLX control panel server (loopback only, not configurable to any other host)."
+        },
+        "veloxquant.autoDetectHardware": {
+          "type": "boolean",
+          "default": true,
+          "description": "Try to prefill chip and RAM fields in the Recommend form from detected Apple Silicon hardware."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "node esbuild.js --production",
+    "watch": "node esbuild.js --watch",
+    "compile": "tsc --noEmit -p ./",
+    "lint": "eslint src --ext ts",
+    "test:unit": "node --import tsx --test test/unit/**/*.test.ts",
+    "test:integration": "tsc -p ./test/suite/tsconfig.json && node ./dist-test/test/suite/runTest.js",
+    "package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "@vscode/test-electron": "^2.3.9",
+    "@vscode/vsce": "^2.24.0",
+    "esbuild": "^0.20.0",
+    "eslint": "^8.56.0",
+    "glob": "^10.3.10",
+    "mocha": "^10.3.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}
