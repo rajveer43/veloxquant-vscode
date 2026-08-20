@@ -2,9 +2,9 @@ name: CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [master]
   push:
-    branches: [main]
+    branches: [master]
 
 jobs:
   build-and-test:
@@ -39,27 +39,6 @@ jobs:
           name: vsix-dry-run
           path: veloxquant-vscode-dryrun.vsix
 
-# --------------------------------------------------------------------------
-# NOTE: publishing is intentionally NOT configured here.
-#
-# A future tag-triggered release workflow would look roughly like:
-#
-#   on:
-#     push:
-#       tags: ['v*']
-#   jobs:
-#     publish:
-#       runs-on: macos-latest
-#       steps:
-#         - uses: actions/checkout@v4
-#         - uses: actions/setup-node@v4
-#           with: { node-version: '20' }
-#         - run: npm ci && npm run build
-#         - run: npx vsce publish -p ${{ secrets.VSCE_PAT }}
-#         - run: npx ovsx publish -p ${{ secrets.OVSX_PAT }}
-#
-# This requires VSCE_PAT (Azure DevOps PAT for the Marketplace publisher)
-# and OVSX_PAT (Open VSX access token) as real repository secrets, and a
-# registered publisher account. None of that is configured in this repo —
-# do not add it without an explicit decision to actually publish.
-# --------------------------------------------------------------------------
+# Publishing is handled by the separate tag-triggered workflow in
+# release.yml, not here. This workflow only builds/tests/dry-run-packages
+# on every push and PR against master.
