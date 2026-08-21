@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/rajveer43/veloxquant-vscode/compare/v0.1.2...v0.1.3) (2026-08-21)
+
+
+### Bug Fixes
+
+* exclude .claude/ session state from git and packaged .vsix ([ed50848](https://github.com/rajveer43/veloxquant-vscode/commit/ed508481b2a4a41a09841eef8ce03988004d4e1e))
+
 ## [0.1.2](https://github.com/rajveer43/veloxquant-vscode/compare/v0.1.1...v0.1.2) (2026-08-21)
 
 
