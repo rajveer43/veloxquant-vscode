@@ -7,8 +7,8 @@
  */
 import { execFile } from 'node:child_process';
 
-export type Chip = 'M1' | 'M2' | 'M3' | 'M4';
-export type RamGb = 8 | 16 | 24 | 32 | 36 | 48 | 64 | 128;
+export type Chip = 'M1' | 'M2' | 'M3' | 'M4' | 'M5';
+export type RamGb = 8 | 16 | 24 | 32 | 36 | 48 | 64 | 96 | 128 | 192 | 256 | 512;
 export type ModelClass = '1B' | '3B' | '7B' | '14B' | '32B';
 export type Goal = 'everyday' | 'max_key_accounting' | 'max_context' | 'best_quality' | 'constant_memory';
 

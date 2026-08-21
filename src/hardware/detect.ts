@@ -5,12 +5,16 @@
  */
 import { execFile } from 'node:child_process';
 
+export type DetectedChip = 'M1' | 'M2' | 'M3' | 'M4' | 'M5';
+
+const KNOWN_CHIPS: readonly DetectedChip[] = ['M1', 'M2', 'M3', 'M4', 'M5'];
+
 export interface DetectedHardware {
-  chip: 'M1' | 'M2' | 'M3' | 'M4' | undefined;
-  ramGb: 8 | 16 | 24 | 32 | 36 | 48 | 64 | 128 | undefined;
+  chip: DetectedChip | undefined;
+  ramGb: 8 | 16 | 24 | 32 | 36 | 48 | 64 | 96 | 128 | 192 | 256 | 512 | undefined;
 }
 
-const RAM_STEPS: DetectedHardware['ramGb'][] = [8, 16, 24, 32, 36, 48, 64, 128];
+const RAM_STEPS: DetectedHardware['ramGb'][] = [8, 16, 24, 32, 36, 48, 64, 96, 128, 192, 256, 512];
 
 function nearestRamStep(bytes: number): DetectedHardware['ramGb'] {
   const gb = bytes / 1024 / 1024 / 1024;
@@ -26,7 +30,7 @@ function nearestRamStep(bytes: number): DetectedHardware['ramGb'] {
   return closest as DetectedHardware['ramGb'];
 }
 
-function sysctl(key: string): Promise<string | undefined> {
+function defaultSysctl(key: string): Promise<string | undefined> {
   return new Promise((resolve) => {
     execFile('sysctl', ['-n', key], { timeout: 2000 }, (error, stdout) => {
       if (error) {
@@ -38,7 +42,10 @@ function sysctl(key: string): Promise<string | undefined> {
   });
 }
 
-export async function detectHardware(): Promise<DetectedHardware> {
+/** `sysctl` is injectable so tests can simulate hardware without shelling out. */
+export async function detectHardware(
+  sysctl: (key: string) => Promise<string | undefined> = defaultSysctl
+): Promise<DetectedHardware> {
   if (process.platform !== 'darwin') {
     return { chip: undefined, ramGb: undefined };
   }
@@ -48,9 +55,10 @@ export async function detectHardware(): Promise<DetectedHardware> {
 
     let chip: DetectedHardware['chip'];
     if (brand) {
-      const match = /Apple (M[1-4])/.exec(brand);
-      if (match) {
-        chip = match[1] as DetectedHardware['chip'];
+      const match = /Apple (M\d+)/.exec(brand);
+      const candidate = match?.[1];
+      if (candidate && (KNOWN_CHIPS as readonly string[]).includes(candidate)) {
+        chip = candidate as DetectedChip;
       }
     }
 
