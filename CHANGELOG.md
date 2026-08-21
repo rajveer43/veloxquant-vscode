@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/rajveer43/veloxquant-vscode/compare/v0.1.0...v0.1.1) (2026-08-21)
+
+
+### Bug Fixes
+
+* auto-detect M5 chip and support higher RAM steps in Recommend form ([c1fb5d6](https://github.com/rajveer43/veloxquant-vscode/commit/c1fb5d6297ffe2e7156e7ac8a57e1911c0154340))
+
 ## 0.1.0
 
 Initial local build.
