@@ -111,6 +111,76 @@ window server access on macOS or a virtual display like Xvfb on Linux CI).
 The scaffolding under `test/suite/` is real and passes locally in a normal
 desktop terminal; it is pinned to VS Code 1.85.2 for launcher compatibility.
 
+## Releasing
+
+Normal releases are fully automated — see [CONTRIBUTING.md](CONTRIBUTING.md).
+Merging Conventional Commits into `master` lets
+[release-please](https://github.com/googleapis/release-please) open a
+Release PR; merging that PR tags, builds, and publishes to both the VS Code
+Marketplace and Open VSX automatically via
+[`.github/workflows/release-please.yml`](.github/workflows/release-please.yml).
+
+The steps below are for the rare case you need to publish by hand (e.g. the
+CI publish job failed partway and a version is already live on one
+registry, or a registry needs one-time setup).
+
+### One-time setup
+
+Both `vsce` and `ovsx` read their token from the `-p` flag. Export them as
+env vars locally so you never have to type them inline:
+
+```
+export VSCE_PAT=<Azure DevOps PAT, Marketplace scope = Manage>
+export OVSX_PAT=<Open VSX access token, from open-vsx.org -> Profile -> Access Tokens>
+```
+
+Open VSX also requires the publisher namespace to exist before the first
+publish — this is separate from having a valid token:
+
+```
+npx ovsx create-namespace veloxquant-mlx -p "$OVSX_PAT"
+```
+
+(Safe to re-run — it errors with "Namespace already exists" if already
+created, which is fine.)
+
+### Build the package
+
+From `master`, at the commit/tag you want to publish:
+
+```
+npm ci
+npm run build
+npx vsce package --no-dependencies -o release.vsix
+```
+
+### Publish
+
+```
+npx vsce publish --packagePath release.vsix -p "$VSCE_PAT"
+npx ovsx publish release.vsix -p "$OVSX_PAT"
+```
+
+`vsce publish` is not idempotent — it fails loudly (`vX.Y.Z already exists`)
+if that exact version is already live on the Marketplace. If Marketplace
+succeeded but Open VSX didn't (or vice versa), just re-run the one that
+still needs it.
+
+### Attach the `.vsix` to the GitHub Release
+
+```
+gh release upload vX.Y.Z release.vsix --repo rajveer43/veloxquant-vscode
+```
+
+Replace `vX.Y.Z` with the tag release-please already created for that
+version (the release must exist first — release-please creates it when its
+PR is merged).
+
+**Never paste a real token value into a chat/AI assistant, a commit, or any
+file that gets committed.** If a token is ever exposed that way, revoke it
+immediately on open-vsx.org / Azure DevOps and update the corresponding
+GitHub Actions secret (`OVSX_PAT` / `VSCE_PAT`).
+
 ## Links
 
 - Main project: https://github.com/rajveer43/VeloxQuant-MLX
