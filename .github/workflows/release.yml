@@ -58,7 +58,7 @@ jobs:
           generate_release_notes: true
 
 # --------------------------------------------------------------------------
-# One-time setup this workflow depends on (do this before pushing a tag):
+# One-time setup this workflow depends on:
 #
 # 1. Repo secrets (Settings -> Secrets and variables -> Actions -> New
 #    repository secret):
@@ -68,13 +68,10 @@ jobs:
 #                  Access Tokens), only needed if publishing there too;
 #                  delete the "Publish to Open VSX" step if not.
 #
-# 2. package.json "version" must be bumped and committed BEFORE tagging —
-#    this workflow refuses to publish if the tag and package.json disagree,
-#    so `npm version patch` (or minor/major) is the safest way to do both
-#    the bump and the tag together:
-#
-#      npm version patch        # bumps package.json + creates a git tag
-#      git push origin master --follow-tags
-#
-#    That last push is what actually triggers this workflow.
+# 2. Version bumps + tagging are automated by release-please.yml, which
+#    watches pushes to master, opens/updates a "Release PR" that bumps
+#    package.json + CHANGELOG.md from Conventional Commits (feat/fix/!),
+#    and creates the vX.Y.Z tag + GitHub Release on merge. That tag push is
+#    what triggers this workflow — no manual `npm version` needed. See
+#    release-please-config.json and CONTRIBUTING.md for the commit format.
 # --------------------------------------------------------------------------

@@ -1,0 +1,24 @@
+name: release-please
+
+# Runs on every push to master. release-please scans commits since the last
+# release tag and keeps a "Release PR" up to date, bumping package.json's
+# version and CHANGELOG.md per Conventional Commits (feat -> minor, fix ->
+# patch, "!" or BREAKING CHANGE -> major; pre-1.0 feat bumps minor, see
+# release-please-config.json). Merging that PR creates the vX.Y.Z tag, which
+# triggers release.yml to build, package, and publish.
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
