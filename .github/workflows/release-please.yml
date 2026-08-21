@@ -4,8 +4,15 @@ name: release-please
 # release tag and keeps a "Release PR" up to date, bumping package.json's
 # version and CHANGELOG.md per Conventional Commits (feat -> minor, fix ->
 # patch, "!" or BREAKING CHANGE -> major; pre-1.0 feat bumps minor, see
-# release-please-config.json). Merging that PR creates the vX.Y.Z tag, which
-# triggers release.yml to build, package, and publish.
+# release-please-config.json). Merging that PR makes release-please create
+# the vX.Y.Z tag + GitHub Release right here, and the `publish` job below
+# runs immediately after in the same workflow run.
+#
+# Publishing lives in this file (not a separate tag-triggered workflow)
+# because tags/releases created by release-please-action use the default
+# GITHUB_TOKEN, and GitHub deliberately does not let GITHUB_TOKEN-authored
+# pushes/tags trigger other workflows (recursion guard) — a separate
+# `on: push: tags:` workflow would simply never fire.
 on:
   push:
     branches: [master]
@@ -17,8 +24,82 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - uses: googleapis/release-please-action@v4
+        id: release
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  publish:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: macos-latest
+    permissions:
+      contents: write # needed to attach the .vsix to the GitHub Release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run compile
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Verify tag matches package.json version
+        run: |
+          TAG_VERSION="${{ needs.release-please.outputs.tag_name }}"
+          TAG_VERSION="${TAG_VERSION#v}"
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "Tag v$TAG_VERSION does not match package.json version $PKG_VERSION"
+            exit 1
+          fi
+
+      - name: Build bundle
+        run: npm run build
+
+      - name: Package
+        run: npx vsce package --no-dependencies -o release.vsix
+
+      - name: Publish to Visual Studio Marketplace
+        run: npx vsce publish --packagePath release.vsix -p ${{ secrets.VSCE_PAT }}
+
+      - name: Publish to Open VSX
+        run: npx ovsx publish release.vsix -p ${{ secrets.OVSX_PAT }}
+
+      - name: Attach .vsix to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.release-please.outputs.tag_name }}
+          files: release.vsix
+
+# --------------------------------------------------------------------------
+# One-time setup this workflow depends on:
+#
+# Repo secrets (Settings -> Secrets and variables -> Actions -> New
+# repository secret):
+#   VSCE_PAT  — Azure DevOps PAT, Marketplace scope = Manage,
+#               organization = "All accessible organizations"
+#   OVSX_PAT  — Open VSX access token from open-vsx.org (Profile ->
+#               Access Tokens), only needed if publishing there too;
+#               delete the "Publish to Open VSX" step if not.
+#
+# See release-please-config.json and CONTRIBUTING.md for the commit
+# format that drives version bumps.
+# --------------------------------------------------------------------------

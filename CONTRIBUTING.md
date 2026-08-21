@@ -30,9 +30,12 @@ BREAKING CHANGE: the `--legacy-json` flag is no longer recognized.
 2. The `release-please` workflow opens/updates a "Release PR" that bumps
    `package.json`'s version and appends to `CHANGELOG.md`. It keeps itself
    up to date as you merge more commits — no manual editing needed.
-3. Merging that PR creates a `vX.Y.Z` tag and GitHub Release automatically.
-4. The tag push triggers `release.yml`, which builds, packages, and
-   publishes to the VS Code Marketplace and Open VSX.
+3. Merging that PR creates a `vX.Y.Z` tag and GitHub Release automatically,
+   and — in the same workflow run — a `publish` job builds, packages, and
+   publishes to the VS Code Marketplace and Open VSX. (Publishing lives in
+   `release-please.yml` itself rather than a separate tag-triggered
+   workflow, because tags created by `GITHUB_TOKEN` don't trigger other
+   workflows.)
 
 No one should hand-edit `package.json`'s `version` or `CHANGELOG.md`
 directly — release-please owns both.
