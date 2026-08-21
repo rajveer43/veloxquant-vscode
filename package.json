@@ -123,7 +123,7 @@
     "watch": "node esbuild.js --watch",
     "compile": "tsc --noEmit -p ./",
     "lint": "eslint src --ext ts",
-    "test:unit": "node --import tsx --test test/unit/**/*.test.ts",
+    "test:unit": "node --import tsx --test test/unit/*.test.ts",
     "test:integration": "tsc -p ./test/suite/tsconfig.json && node ./dist-test/test/suite/runTest.js",
     "package": "vsce package --no-dependencies"
   },
