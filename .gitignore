@@ -5,3 +5,4 @@ dist-test/
 *.vsix
 .DS_Store
 .vscode-test/
+.claude/
