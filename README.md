@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="media/icon.png" alt="VeloxQuant-MLX icon" width="128" height="128" />
+</p>
+
 # VeloxQuant-MLX for VS Code
 
 [![VS Code Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/veloxquant-mlx.veloxquant-vscode)](https://marketplace.visualstudio.com/items?itemName=veloxquant-mlx.veloxquant-vscode)
