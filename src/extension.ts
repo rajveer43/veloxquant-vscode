@@ -3,9 +3,13 @@ import { RecommendSidebarProvider } from './views/recommendSidebarProvider';
 import { PlaygroundPanel } from './views/playgroundPanel';
 import { PlaygroundLauncherProvider } from './views/playgroundLauncherProvider';
 import { PanelServerManager } from './server/panelServerManager';
+import { StatusBarManager } from './server/statusBarManager';
+import { LogTailManager } from './server/logTailManager';
 import { resolveInterpreter, promptSelectInterpreter } from './python/interpreter';
 
 let serverManager: PanelServerManager | undefined;
+let statusBarManager: StatusBarManager | undefined;
+let logTailManager: LogTailManager | undefined;
 
 export function activate(context: vscode.ExtensionContext): void {
   const provider = new RecommendSidebarProvider(context.extensionUri);
@@ -30,6 +34,43 @@ export function activate(context: vscode.ExtensionContext): void {
       // beyond exposing the command for discoverability/testing.
     })
   );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('veloxquant.stopInferenceServer', async () => {
+      if (!serverManager) {
+        return;
+      }
+
+      const running = await serverManager.isInferenceServerRunning();
+      if (!running) {
+        void vscode.window.showInformationMessage('VeloxQuant-MLX: no inference server is running.');
+        return;
+      }
+
+      const choice = await vscode.window.showWarningMessage(
+        'Stop the VeloxQuant-MLX inference server? Any in-progress requests will be interrupted.',
+        { modal: true },
+        'Stop Server'
+      );
+      if (choice !== 'Stop Server') {
+        return;
+      }
+
+      try {
+        await serverManager.client.stop();
+      } catch (err) {
+        void vscode.window.showErrorMessage(`Could not stop the VeloxQuant-MLX inference server: ${(err as Error).message}`);
+      }
+    })
+  );
+
+  statusBarManager = new StatusBarManager(() => serverManager);
+  statusBarManager.start();
+  context.subscriptions.push(statusBarManager);
+
+  logTailManager = new LogTailManager(() => serverManager);
+  logTailManager.start();
+  context.subscriptions.push(logTailManager);
 }
 
 /**

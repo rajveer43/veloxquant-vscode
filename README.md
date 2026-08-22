@@ -50,6 +50,17 @@ this extension spawned the panel process and an inference server is still
 running when you close the Compression Lab panel, you'll be asked before
 anything is stopped.
 
+While an inference server started from the Compression Lab is running, a
+status bar item shows its method and port. Hovering it also shows the
+server process's measured RSS (via the control panel's `/api/memory`,
+clearly separate from the accounting-only compression ratios shown
+elsewhere), and it links to command **VeloxQuant-MLX: Stop Inference
+Server**. Clicking the item reopens the Compression Lab panel. The
+server's stdout/stderr are also tailed live into an output channel named
+**VeloxQuant-MLX Inference Server** (View → Output), separate from the
+**VeloxQuant-MLX Panel** channel, which only carries the control-plane
+process's own logs.
+
 ## Requirements
 
 - macOS on Apple Silicon (M1–M4) to actually run compression — the

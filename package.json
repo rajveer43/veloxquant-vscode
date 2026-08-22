@@ -86,6 +86,11 @@
         "command": "veloxquant.refreshRecommend",
         "title": "VeloxQuant-MLX: Refresh Recommendation Form",
         "category": "VeloxQuant-MLX"
+      },
+      {
+        "command": "veloxquant.stopInferenceServer",
+        "title": "VeloxQuant-MLX: Stop Inference Server",
+        "category": "VeloxQuant-MLX"
       }
     ],
     "menus": {
