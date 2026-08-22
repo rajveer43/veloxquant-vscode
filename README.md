@@ -1,5 +1,10 @@
 # VeloxQuant-MLX for VS Code
 
+[![VS Code Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/veloxquant-mlx.veloxquant-vscode)](https://marketplace.visualstudio.com/items?itemName=veloxquant-mlx.veloxquant-vscode)
+[![VS Code Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/veloxquant-mlx.veloxquant-vscode)](https://marketplace.visualstudio.com/items?itemName=veloxquant-mlx.veloxquant-vscode)
+[![Open VSX Downloads](https://img.shields.io/open-vsx/dt/veloxquant-mlx/veloxquant-vscode)](https://open-vsx.org/extension/veloxquant-mlx/veloxquant-vscode)
+[![Open VSX Version](https://img.shields.io/open-vsx/v/veloxquant-mlx/veloxquant-vscode)](https://open-vsx.org/extension/veloxquant-mlx/veloxquant-vscode)
+
 Recommend a KV-cache compression method for your Mac and model, and run the
 [VeloxQuant-MLX](https://github.com/rajveer43/VeloxQuant-MLX) compression lab
 — without leaving VS Code.
@@ -196,6 +201,8 @@ GitHub Actions secret (`OVSX_PAT` / `VSCE_PAT`).
 
 - Main project: https://github.com/rajveer43/VeloxQuant-MLX
 - Issues: https://github.com/rajveer43/veloxquant-vscode/issues
+- VS Code Marketplace: https://marketplace.visualstudio.com/items?itemName=veloxquant-mlx.veloxquant-vscode
+- Open VSX Registry: https://open-vsx.org/extension/veloxquant-mlx/veloxquant-vscode
 
 ## License
 
