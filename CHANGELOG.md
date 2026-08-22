@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.0](https://github.com/rajveer43/veloxquant-vscode/compare/v0.1.3...v0.2.0) (2026-08-22)
+
+
+### Features
+
+* add inference server status bar item and live log tailing ([ae38dad](https://github.com/rajveer43/veloxquant-vscode/commit/ae38dad7e8c050be8532bf842cb6448e8e28bfef))
+* inference server status bar item + live log tailing ([ef84012](https://github.com/rajveer43/veloxquant-vscode/commit/ef84012406bfdeeecbb1e1900e90e9915e2b1f79))
+
 ## [0.1.3](https://github.com/rajveer43/veloxquant-vscode/compare/v0.1.2...v0.1.3) (2026-08-21)
 
 
