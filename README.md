@@ -4,8 +4,8 @@
 
 # VeloxQuant-MLX for VS Code
 
-[![VS Code Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/veloxquant-mlx.veloxquant-vscode)](https://marketplace.visualstudio.com/items?itemName=veloxquant-mlx.veloxquant-vscode)
-[![VS Code Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/veloxquant-mlx.veloxquant-vscode)](https://marketplace.visualstudio.com/items?itemName=veloxquant-mlx.veloxquant-vscode)
+[![VS Code Marketplace Version](https://img.shields.io/vscode-marketplace/v/veloxquant-mlx.veloxquant-vscode.svg)](https://marketplace.visualstudio.com/items?itemName=veloxquant-mlx.veloxquant-vscode)
+[![VS Code Marketplace Installs](https://img.shields.io/vscode-marketplace/i/veloxquant-mlx.veloxquant-vscode.svg)](https://marketplace.visualstudio.com/items?itemName=veloxquant-mlx.veloxquant-vscode)
 [![Open VSX Downloads](https://img.shields.io/open-vsx/dt/veloxquant-mlx/veloxquant-vscode)](https://open-vsx.org/extension/veloxquant-mlx/veloxquant-vscode)
 [![Open VSX Version](https://img.shields.io/open-vsx/v/veloxquant-mlx/veloxquant-vscode)](https://open-vsx.org/extension/veloxquant-mlx/veloxquant-vscode)
 
