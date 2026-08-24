@@ -23,10 +23,16 @@ function renderLocal(url: string): void {
   root.innerHTML = `<iframe id="lab-frame" src="${url}" title="VeloxQuant-MLX Compression Lab"></iframe>`;
 }
 
+function escapeHtml(s: string): string {
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
 function renderUnavailable(message: string): void {
   root.innerHTML = `
     <div class="center">
-      <p>${message}</p>
+      <p>${escapeHtml(message)}</p>
       <div class="actions">
         <button id="retry-btn" type="button">Retry local server</button>
         <button id="hosted-btn" type="button" class="secondary">Use hosted version instead</button>
@@ -35,6 +41,26 @@ function renderUnavailable(message: string): void {
   `;
   document.getElementById('retry-btn')?.addEventListener('click', () => {
     vscode.postMessage({ type: 'retry' });
+  });
+  document.getElementById('hosted-btn')?.addEventListener('click', () => {
+    vscode.postMessage({ type: 'openHosted' });
+  });
+}
+
+function renderNotInstalled(interpreterPath: string): void {
+  root.innerHTML = `
+    <div class="center">
+      <p><strong>VeloxQuant-MLX is not installed</strong> in the resolved interpreter (<code>${escapeHtml(
+        interpreterPath
+      )}</code>).</p>
+      <div class="actions">
+        <button id="install-btn" type="button">Install VeloxQuant-MLX</button>
+        <button id="hosted-btn" type="button" class="secondary">Use hosted version instead</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('install-btn')?.addEventListener('click', () => {
+    vscode.postMessage({ type: 'installPackage' });
   });
   document.getElementById('hosted-btn')?.addEventListener('click', () => {
     vscode.postMessage({ type: 'openHosted' });
@@ -52,6 +78,9 @@ window.addEventListener('message', (event: MessageEvent) => {
       break;
     case 'unavailable':
       renderUnavailable(msg.message as string);
+      break;
+    case 'not-installed':
+      renderNotInstalled(msg.interpreterPath as string);
       break;
     default:
       break;

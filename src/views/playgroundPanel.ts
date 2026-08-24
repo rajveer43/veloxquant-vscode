@@ -1,7 +1,11 @@
 import * as vscode from 'vscode';
-import { PanelServerManager } from '../server/panelServerManager';
+import { PanelServerManager, PanelModuleNotFoundError } from '../server/panelServerManager';
 
 const HOSTED_PLAYGROUND_URL = 'https://veloxquant-mlx.netlify.app/playground.html';
+
+function quoteForShell(path: string): string {
+  return /\s/.test(path) ? `"${path}"` : path;
+}
 
 export class PlaygroundPanel {
   private static current: PlaygroundPanel | undefined;
@@ -84,9 +88,32 @@ export class PlaygroundPanel {
       case 'openHosted':
         await vscode.env.openExternal(vscode.Uri.parse(HOSTED_PLAYGROUND_URL));
         break;
+      case 'installPackage':
+        await this.handleInstallPackage();
+        break;
       default:
         break;
     }
+  }
+
+  private async handleInstallPackage(): Promise<void> {
+    const manager = this.getServerManager();
+    if (!manager) return;
+
+    const interpreterPath = manager.interpreterPathValue;
+    const terminal = vscode.window.createTerminal('Install VeloxQuant-MLX');
+    terminal.show();
+    terminal.sendText(`${quoteForShell(interpreterPath)} -m pip install VeloxQuant-MLX`);
+
+    const disposable = vscode.window.onDidCloseTerminal((closed) => {
+      if (closed === terminal) {
+        disposable.dispose();
+        if (closed.exitStatus?.code === 0) {
+          void vscode.window.showInformationMessage('VeloxQuant-MLX installed. Retrying the Compression Lab.');
+          void this.startLocalBackend();
+        }
+      }
+    });
   }
 
   private post(message: unknown): void {
@@ -108,6 +135,14 @@ export class PlaygroundPanel {
       await manager.ensureRunning();
       this.post({ type: 'ready', url: manager.client.baseUrl() });
     } catch (err) {
+      if (err instanceof PanelModuleNotFoundError) {
+        this.post({
+          type: 'not-installed',
+          message: err.message,
+          interpreterPath: err.interpreterPath,
+        });
+        return;
+      }
       this.post({
         type: 'unavailable',
         message: `Could not reach the local VeloxQuant-MLX panel server: ${(err as Error).message}`,

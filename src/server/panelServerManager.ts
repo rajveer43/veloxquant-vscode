@@ -12,8 +12,17 @@
 import { ChildProcess, spawn } from 'node:child_process';
 import * as vscode from 'vscode';
 import { PanelApiClient } from './panelApiClient';
+import { checkModuleImportable } from '../python/recommendClient';
 
 export type PanelBackendState = 'unknown' | 'reachable-external' | 'spawning' | 'spawned' | 'unreachable';
+
+/** Thrown by `ensureRunning` when the preflight import check fails, so callers can offer an install action. */
+export class PanelModuleNotFoundError extends Error {
+  constructor(readonly interpreterPath: string) {
+    super(`VeloxQuant-MLX is not installed in the resolved interpreter (${interpreterPath}).`);
+    this.name = 'PanelModuleNotFoundError';
+  }
+}
 
 export class PanelServerManager {
   private child: ChildProcess | undefined;
@@ -26,6 +35,10 @@ export class PanelServerManager {
 
   get client(): PanelApiClient {
     return new PanelApiClient(this.port);
+  }
+
+  get interpreterPathValue(): string {
+    return this.interpreterPath;
   }
 
   /** True only if this manager instance spawned the currently-tracked child. */
@@ -52,6 +65,14 @@ export class PanelServerManager {
     if (this.child && !this.child.killed) {
       // We already have a spawn in flight; just wait for it below.
     } else {
+      // Preflight so a missing package produces an actionable "not
+      // installed" error instead of a generic "process exited" message.
+      const importable = await checkModuleImportable(this.interpreterPath);
+      if (!importable) {
+        this.state = 'unreachable';
+        throw new PanelModuleNotFoundError(this.interpreterPath);
+      }
+
       this.state = 'spawning';
       this.child = spawn(this.interpreterPath, ['-m', 'veloxquant_mlx', 'panel', '--port', String(this.port), '--no-browser'], {
         stdio: ['ignore', 'pipe', 'pipe'],
