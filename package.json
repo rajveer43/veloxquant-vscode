@@ -2,7 +2,7 @@
   "name": "veloxquant-vscode",
   "displayName": "VeloxQuant-MLX",
   "description": "Recommend KV-cache compression methods and run the VeloxQuant-MLX compression lab for mlx_lm models on Apple Silicon, without leaving VS Code.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "veloxquant-mlx",
   "license": "MIT",
   "engines": {

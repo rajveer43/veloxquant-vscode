@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/rajveer43/veloxquant-vscode/compare/v0.2.0...v0.2.1) (2026-08-24)
+
+
+### Bug Fixes
+
+* **playground:** detect missing VeloxQuant-MLX before spawning panel server ([5d071f5](https://github.com/rajveer43/veloxquant-vscode/commit/5d071f5e05a92ed319e1954f8a7bdcda1c1004de))
+
 ## [0.2.0](https://github.com/rajveer43/veloxquant-vscode/compare/v0.1.3...v0.2.0) (2026-08-22)
 
 
