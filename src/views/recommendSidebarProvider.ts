@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { promptSelectInterpreter, resolveInterpreter } from '../python/interpreter';
+import { promptSelectInterpreter, resolveInterpreter, buildPipInstallCommand } from '../python/interpreter';
 import {
   RecommendError,
   RecommendRequestInput,
@@ -205,7 +205,7 @@ ${body}
 
     const terminal = vscode.window.createTerminal('Install VeloxQuant-MLX');
     terminal.show();
-    terminal.sendText(`${quoteForShell(interpreterPath)} -m pip install VeloxQuant-MLX`);
+    terminal.sendText(buildPipInstallCommand(interpreterPath, false));
 
     const disposable = vscode.window.onDidCloseTerminal((closed) => {
       if (closed === terminal) {
@@ -224,7 +224,7 @@ ${body}
 
     const terminal = vscode.window.createTerminal('Upgrade VeloxQuant-MLX');
     terminal.show();
-    terminal.sendText(`${quoteForShell(interpreterPath)} -m pip install -U VeloxQuant-MLX`);
+    terminal.sendText(buildPipInstallCommand(interpreterPath, true));
 
     const disposable = vscode.window.onDidCloseTerminal((closed) => {
       if (closed === terminal) {
@@ -265,8 +265,4 @@ function toRequestInput(raw: RawFormValues): RecommendRequestInput {
     nKvHeads: raw.nKvHeads,
     headDim: raw.headDim,
   };
-}
-
-function quoteForShell(path: string): string {
-  return /\s/.test(path) ? `"${path}"` : path;
 }

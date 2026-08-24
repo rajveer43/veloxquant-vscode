@@ -98,3 +98,22 @@ export async function resolveInterpreter(): Promise<InterpreterResolution> {
 export async function promptSelectInterpreter(): Promise<void> {
   await vscode.commands.executeCommand('python.setInterpreter');
 }
+
+function quoteForShell(path: string): string {
+  return /\s/.test(path) ? `"${path}"` : path;
+}
+
+/**
+ * Builds a shell command that installs (or upgrades) VeloxQuant-MLX,
+ * automatically retrying with `--user --break-system-packages` if the
+ * plain install is rejected by a PEP 668 "externally managed environment"
+ * interpreter (e.g. a bare Homebrew Python with no active venv) — the
+ * common case for anyone who hasn't selected a project venv in VS Code.
+ */
+export function buildPipInstallCommand(interpreterPath: string, upgrade: boolean): string {
+  const py = quoteForShell(interpreterPath);
+  const pkg = upgrade ? '-U VeloxQuant-MLX' : 'VeloxQuant-MLX';
+  const plain = `${py} -m pip install ${pkg}`;
+  const fallback = `${py} -m pip install --user --break-system-packages ${pkg}`;
+  return `${plain} || (echo "Plain install failed (likely an externally-managed interpreter) — retrying with --user --break-system-packages:" && ${fallback})`;
+}

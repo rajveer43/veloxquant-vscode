@@ -1,11 +1,8 @@
 import * as vscode from 'vscode';
 import { PanelServerManager, PanelModuleNotFoundError } from '../server/panelServerManager';
+import { buildPipInstallCommand } from '../python/interpreter';
 
 const HOSTED_PLAYGROUND_URL = 'https://veloxquant-mlx.netlify.app/playground.html';
-
-function quoteForShell(path: string): string {
-  return /\s/.test(path) ? `"${path}"` : path;
-}
 
 export class PlaygroundPanel {
   private static current: PlaygroundPanel | undefined;
@@ -103,7 +100,7 @@ export class PlaygroundPanel {
     const interpreterPath = manager.interpreterPathValue;
     const terminal = vscode.window.createTerminal('Install VeloxQuant-MLX');
     terminal.show();
-    terminal.sendText(`${quoteForShell(interpreterPath)} -m pip install VeloxQuant-MLX`);
+    terminal.sendText(buildPipInstallCommand(interpreterPath, false));
 
     const disposable = vscode.window.onDidCloseTerminal((closed) => {
       if (closed === terminal) {
