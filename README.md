@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="media/icon.png" alt="VeloxQuant-MLX icon" width="128" height="128" />
+  <img src="media/social-banner.png" alt="VeloxQuant-MLX for VS Code — install and get up to 16x KV-cache reduction across 42 compression methods" width="100%" />
 </p>
 
 # VeloxQuant-MLX for VS Code
