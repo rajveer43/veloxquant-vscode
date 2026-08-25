@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/rajveer43/veloxquant-vscode/compare/v0.2.1...v0.2.2) (2026-08-24)
+
+
+### Bug Fixes
+
+* fall back to --user --break-system-packages on PEP 668 pip errors ([a1679f3](https://github.com/rajveer43/veloxquant-vscode/commit/a1679f346b10b362519a39b8609d9cf3e7a86e0a))
+
 ## [0.2.1](https://github.com/rajveer43/veloxquant-vscode/compare/v0.2.0...v0.2.1) (2026-08-24)
 
 
