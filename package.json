@@ -91,6 +91,11 @@
         "command": "veloxquant.stopInferenceServer",
         "title": "VeloxQuant-MLX: Stop Inference Server",
         "category": "VeloxQuant-MLX"
+      },
+      {
+        "command": "veloxquant.profileActiveSession",
+        "title": "VeloxQuant-MLX: Profile Active Session",
+        "category": "VeloxQuant-MLX"
       }
     ],
     "menus": {

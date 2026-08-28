@@ -44,6 +44,22 @@ export interface StatusResponse {
   version: string;
 }
 
+export interface ProfileLayerRow {
+  layer: number;
+  quantize_ms: number | null;
+  dequantize_ms: number | null;
+  write_ms: number | null;
+  peak_memory_bytes: number | null;
+  compression_ratio: number | null;
+  tokens_per_sec: number | null;
+}
+
+export interface ProfileResponse {
+  method: string;
+  layers: ProfileLayerRow[];
+  table: string;
+}
+
 const LOOPBACK_HOST = '127.0.0.1';
 
 function requestJson<T>(port: number, path: string, options: { method?: string; timeoutMs?: number; body?: unknown } = {}): Promise<T> {
@@ -116,6 +132,10 @@ export class PanelApiClient {
 
   async getLogs(since = 0): Promise<{ lines: unknown[]; total: number }> {
     return requestJson(this.port, `/api/logs?since=${since}`);
+  }
+
+  async getProfile(): Promise<ProfileResponse> {
+    return requestJson<ProfileResponse>(this.port, '/api/profile', { timeoutMs: 10000 });
   }
 
   async start(config: Record<string, unknown>): Promise<StatusResponse> {
