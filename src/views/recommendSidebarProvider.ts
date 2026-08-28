@@ -10,6 +10,7 @@ import {
 } from '../python/recommendClient';
 import { buildFullSnippet } from '../insert/snippetBuilder';
 import { insertSnippet, pickInsertTarget } from '../insert/targetPicker';
+import { inferModelShapeFromActiveEditor } from '../insert/modelInference';
 import { detectHardware } from '../hardware/detect';
 import { PanelApiClient } from '../server/panelApiClient';
 
@@ -110,6 +111,9 @@ ${body}
       case 'reportIssue':
         await this.handleReportIssue(message.stderr as string);
         break;
+      case 'infer':
+        this.handleInfer();
+        break;
       default:
         break;
     }
@@ -127,6 +131,23 @@ ${body}
         this.post({ type: 'prefill', values: { chip: hw.chip, ramGb: hw.ramGb } });
       }
     }
+
+    if (inferModelShapeFromActiveEditor()) {
+      this.post({ type: 'inferAvailable' });
+    }
+  }
+
+  private handleInfer(): void {
+    const shape = inferModelShapeFromActiveEditor();
+    if (!shape) {
+      this.post({ type: 'inferResult', values: undefined });
+      return;
+    }
+    this.post({
+      type: 'inferResult',
+      values: { nLayers: shape.nLayers, headDim: shape.headDim },
+      source: shape.source,
+    });
   }
 
   private async resolveInterpreterOrPrompt(): Promise<string | undefined> {
@@ -252,6 +273,7 @@ interface RawFormValues {
   nLayers?: number;
   nKvHeads?: number;
   headDim?: number;
+  batchSize?: number;
 }
 
 function toRequestInput(raw: RawFormValues): RecommendRequestInput {
@@ -264,5 +286,6 @@ function toRequestInput(raw: RawFormValues): RecommendRequestInput {
     nLayers: raw.nLayers,
     nKvHeads: raw.nKvHeads,
     headDim: raw.headDim,
+    batchSize: raw.batchSize,
   };
 }

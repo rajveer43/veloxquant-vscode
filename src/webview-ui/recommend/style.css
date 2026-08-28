@@ -168,6 +168,23 @@ button.secondary:hover {
   margin-bottom: 4px;
 }
 
+.knobs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  color: var(--vscode-descriptionForeground);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 0.9em;
+}
+
+.knobs li {
+  margin-bottom: 2px;
+}
+
+.knob-key {
+  color: var(--vscode-foreground);
+}
+
 .rationale {
   color: var(--vscode-foreground);
   line-height: 1.4;

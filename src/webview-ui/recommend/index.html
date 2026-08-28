@@ -73,6 +73,14 @@
         <label for="head-dim">Head dimension</label>
         <input type="number" id="head-dim" name="headDim" min="1" placeholder="default" />
       </div>
+      <div class="field">
+        <label for="batch-size">Batch size</label>
+        <input type="number" id="batch-size" name="batchSize" min="1" placeholder="default" />
+      </div>
+      <div class="field">
+        <button type="button" id="infer-btn" class="secondary" hidden>Infer from active file</button>
+        <div id="infer-note" class="estimate-note" hidden></div>
+      </div>
     </details>
 
     <button type="submit" id="submit-btn">Get recommendation</button>

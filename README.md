@@ -4,8 +4,6 @@
 
 # VeloxQuant-MLX for VS Code
 
-[![VS Code Marketplace Version](https://img.shields.io/vscode-marketplace/v/veloxquant-mlx.veloxquant-vscode.svg)](https://marketplace.visualstudio.com/items?itemName=veloxquant-mlx.veloxquant-vscode)
-[![VS Code Marketplace Installs](https://img.shields.io/vscode-marketplace/i/veloxquant-mlx.veloxquant-vscode.svg)](https://marketplace.visualstudio.com/items?itemName=veloxquant-mlx.veloxquant-vscode)
 [![Open VSX Downloads](https://img.shields.io/open-vsx/dt/veloxquant-mlx/veloxquant-vscode)](https://open-vsx.org/extension/veloxquant-mlx/veloxquant-vscode)
 [![Open VSX Version](https://img.shields.io/open-vsx/v/veloxquant-mlx/veloxquant-vscode)](https://open-vsx.org/extension/veloxquant-mlx/veloxquant-vscode)
 
@@ -40,6 +38,16 @@ and renders:
   open Python files, or falls back to your clipboard).
 - A **Copy CLI command** button so you can reproduce the exact call in a
   terminal or notebook.
+
+An **Advanced** section adds optional sequence length, layer count, KV head
+count, head dimension, and batch size overrides — the same workload shape
+`select_kv_cache_config()`'s `WorkloadSpec` takes upstream. When the active
+(or first open) Python file has a recognizable model-load call (e.g.
+`AutoModelForCausalLM.from_pretrained(...)`, `mlx_lm.load(...)`) with layer
+count or head dimension spelled out literally in its arguments, an **Infer
+from active file** button appears to fill those two fields in for you; it's
+a text scan, not a model download, so it only fills in what's already
+written in your source.
 
 Hardware detection (chip + RAM) prefills the form on Apple Silicon Macs when
 `veloxquant.autoDetectHardware` is on; it never blocks the form if detection
@@ -111,7 +119,6 @@ VeloxQuant-MLX" button when it detects the package is missing.)
   telemetry API only).
 - No Windows/Linux feature parity claims — the extension can activate
   cross-platform but does not claim the underlying library works there.
-- Demo GIF: TODO.
 
 ## Development
 

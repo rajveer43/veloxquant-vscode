@@ -42,6 +42,21 @@ test('buildRecommendArgv: includes advanced flags only when provided', () => {
   assert.ok(!argv.includes('--head-dim'));
 });
 
+test('buildRecommendArgv: includes --batch-size only when provided', () => {
+  const withBatch = buildRecommendArgv({
+    chip: 'M3',
+    ramGb: 24,
+    modelClass: '3B',
+    goal: 'everyday',
+    batchSize: 4,
+  });
+  assert.ok(withBatch.includes('--batch-size'));
+  assert.ok(withBatch.includes('4'));
+
+  const withoutBatch = buildRecommendArgv({ chip: 'M3', ramGb: 24, modelClass: '3B', goal: 'everyday' });
+  assert.ok(!withoutBatch.includes('--batch-size'));
+});
+
 test('buildRecommendArgv: never produces a single shell string (argv array only)', () => {
   const argv = buildRecommendArgv({ chip: 'M1', ramGb: 8, modelClass: '1B', goal: 'best_quality' });
   assert.ok(Array.isArray(argv));
