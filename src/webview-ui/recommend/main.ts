@@ -23,6 +23,7 @@ interface RecommendFormValues {
   nLayers?: number;
   nKvHeads?: number;
   headDim?: number;
+  batchSize?: number;
 }
 
 const form = document.getElementById('recommend-form') as HTMLFormElement;
@@ -30,6 +31,8 @@ const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
 const resultEl = document.getElementById('result') as HTMLDivElement;
 const errorEl = document.getElementById('error-area') as HTMLDivElement;
 const platformNoticeEl = document.getElementById('platform-notice') as HTMLDivElement;
+const inferBtn = document.getElementById('infer-btn') as HTMLButtonElement;
+const inferNoteEl = document.getElementById('infer-note') as HTMLDivElement;
 
 function optionalInt(id: string): number | undefined {
   const el = document.getElementById(id) as HTMLInputElement;
@@ -52,8 +55,13 @@ function readForm(): RecommendFormValues {
     nLayers: optionalInt('n-layers'),
     nKvHeads: optionalInt('n-kv-heads'),
     headDim: optionalInt('head-dim'),
+    batchSize: optionalInt('batch-size'),
   };
 }
+
+inferBtn.addEventListener('click', () => {
+  vscode.postMessage({ type: 'infer' });
+});
 
 form.addEventListener('submit', (e) => {
   e.preventDefault();
@@ -98,10 +106,19 @@ function renderResult(payload: {
     ? 'Also reduces live RAM'
     : 'Accounting only — RAM usage likely unchanged';
 
+  const knobEntries = Object.entries(rec.knobs);
+
   resultEl.innerHTML = `
     <div class="method-heading">${heading}</div>
     <div class="ratio-stat">${rec.key_accounting_ratio}x<span class="label">key accounting ratio</span></div>
     <div><span class="badge ${badgeClass}">${badgeText}</span></div>
+    ${
+      knobEntries.length
+        ? `<ul class="knobs">${knobEntries
+            .map(([k, v]) => `<li><span class="knob-key">${escapeHtml(k)}</span>: ${escapeHtml(String(v))}</li>`)
+            .join('')}</ul>`
+        : ''
+    }
     ${
       rec.warnings.length
         ? `<ul class="warnings">${rec.warnings.map((w) => `<li>${escapeHtml(w)}</li>`).join('')}</ul>`
@@ -220,6 +237,27 @@ window.addEventListener('message', (event: MessageEvent) => {
       if (values.ramGb) {
         (document.getElementById('ram-gb') as HTMLSelectElement).value = String(values.ramGb);
       }
+      break;
+    }
+    case 'inferAvailable':
+      inferBtn.hidden = false;
+      break;
+    case 'inferResult': {
+      const values = msg.values as Partial<RecommendFormValues> | undefined;
+      if (!values || (values.nLayers === undefined && values.headDim === undefined)) {
+        inferNoteEl.textContent = 'Could not infer model shape from the active file.';
+        inferNoteEl.hidden = false;
+        break;
+      }
+      if (values.nLayers !== undefined) {
+        (document.getElementById('n-layers') as HTMLInputElement).value = String(values.nLayers);
+      }
+      if (values.headDim !== undefined) {
+        (document.getElementById('head-dim') as HTMLInputElement).value = String(values.headDim);
+      }
+      const source = (msg.source as string | undefined) ?? 'active file';
+      inferNoteEl.textContent = `Inferred from ${source}.`;
+      inferNoteEl.hidden = false;
       break;
     }
     default:
