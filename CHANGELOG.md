@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.0](https://github.com/rajveer43/veloxquant-vscode/compare/v0.2.2...v0.3.0) (2026-08-28)
+
+
+### Features
+
+* add batch_size and model-shape inference to Recommend sidebar ([f305b2b](https://github.com/rajveer43/veloxquant-vscode/commit/f305b2b4e590f60ca005395c7de1cd4680c437b1)), closes [#8](https://github.com/rajveer43/veloxquant-vscode/issues/8)
+* align Recommend sidebar with select_kv_cache_config's WorkloadSpec ([df797a8](https://github.com/rajveer43/veloxquant-vscode/commit/df797a80f9e1f93b2daa222014a64910198cc84a))
+
 ## [0.2.2](https://github.com/rajveer43/veloxquant-vscode/compare/v0.2.1...v0.2.2) (2026-08-24)
 
 
