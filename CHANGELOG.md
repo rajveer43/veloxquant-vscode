@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/rajveer43/veloxquant-vscode/compare/v0.3.0...v0.4.0) (2026-08-28)
+
+
+### Features
+
+* add Profile Active Session command for KVCacheProfiler data ([a43b7a4](https://github.com/rajveer43/veloxquant-vscode/commit/a43b7a40d86b1dbede306e637244e47fa683183e))
+* add Profile Active Session command for KVCacheProfiler data ([cc3c74a](https://github.com/rajveer43/veloxquant-vscode/commit/cc3c74ad64ee0bffb37d31a79d83557fc24da988))
+
 ## [0.3.0](https://github.com/rajveer43/veloxquant-vscode/compare/v0.2.2...v0.3.0) (2026-08-28)
 
 
