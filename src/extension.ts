@@ -5,6 +5,7 @@ import { PlaygroundLauncherProvider } from './views/playgroundLauncherProvider';
 import { PanelServerManager } from './server/panelServerManager';
 import { StatusBarManager } from './server/statusBarManager';
 import { LogTailManager } from './server/logTailManager';
+import { profileActiveSession } from './server/profileManager';
 import { resolveInterpreter, promptSelectInterpreter } from './python/interpreter';
 
 let serverManager: PanelServerManager | undefined;
@@ -61,6 +62,12 @@ export function activate(context: vscode.ExtensionContext): void {
       } catch (err) {
         void vscode.window.showErrorMessage(`Could not stop the VeloxQuant-MLX inference server: ${(err as Error).message}`);
       }
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('veloxquant.profileActiveSession', async () => {
+      await profileActiveSession(() => serverManager);
     })
   );
 

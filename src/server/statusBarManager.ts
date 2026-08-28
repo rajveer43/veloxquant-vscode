@@ -114,10 +114,13 @@ export class StatusBarManager implements vscode.Disposable {
       // Memory endpoint is best-effort for the tooltip; omit the section on failure.
     }
 
-    lines.push('', 'Click to open the Compression Lab. [Stop server](command:veloxquant.stopInferenceServer)');
+    lines.push(
+      '',
+      'Click to open the Compression Lab. [Profile session](command:veloxquant.profileActiveSession) · [Stop server](command:veloxquant.stopInferenceServer)'
+    );
 
     const md = new vscode.MarkdownString(lines.join('\n'));
-    md.isTrusted = { enabledCommands: ['veloxquant.stopInferenceServer'] };
+    md.isTrusted = { enabledCommands: ['veloxquant.profileActiveSession', 'veloxquant.stopInferenceServer'] };
     return md;
   }
 
