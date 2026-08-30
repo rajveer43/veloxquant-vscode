@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.1](https://github.com/rajveer43/veloxquant-vscode/compare/v0.4.0...v0.4.1) (2026-08-30)
+
+
+### Bug Fixes
+
+* move Compression Lab entry point off Recommend panel toolbar ([7926a79](https://github.com/rajveer43/veloxquant-vscode/commit/7926a79f0f3594364bdecb07fd9a5605edd34a23))
+* move Compression Lab entry point off Recommend panel toolbar ([82819e8](https://github.com/rajveer43/veloxquant-vscode/commit/82819e880cee4a2de4fc5d8002bcf30ca8fddb5b))
+
 ## [0.4.0](https://github.com/rajveer43/veloxquant-vscode/compare/v0.3.0...v0.4.0) (2026-08-28)
 
 
