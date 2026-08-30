@@ -117,6 +117,30 @@ button.secondary:hover {
   gap: 10px;
 }
 
+.lab-cta {
+  border-top: 1px solid var(--vscode-panel-border);
+  padding-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.lab-cta a {
+  color: var(--vscode-textLink-foreground);
+  cursor: pointer;
+}
+
+.lab-cta a:hover {
+  color: var(--vscode-textLink-activeForeground);
+  text-decoration: underline;
+}
+
+.lab-cta a:focus {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 2px;
+}
+
 .method-heading {
   font-size: 1.1em;
   font-weight: 700;
