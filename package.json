@@ -98,15 +98,6 @@
         "category": "VeloxQuant-MLX"
       }
     ],
-    "menus": {
-      "view/title": [
-        {
-          "command": "veloxquant.openPlaygroundEditor",
-          "when": "view == veloxquant.recommendSidebar",
-          "group": "navigation"
-        }
-      ]
-    },
     "configuration": {
       "title": "VeloxQuant-MLX",
       "properties": {

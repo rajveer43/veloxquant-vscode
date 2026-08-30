@@ -33,6 +33,12 @@ const errorEl = document.getElementById('error-area') as HTMLDivElement;
 const platformNoticeEl = document.getElementById('platform-notice') as HTMLDivElement;
 const inferBtn = document.getElementById('infer-btn') as HTMLButtonElement;
 const inferNoteEl = document.getElementById('infer-note') as HTMLDivElement;
+const openLabLink = document.getElementById('open-lab-link') as HTMLAnchorElement;
+
+openLabLink.addEventListener('click', (e) => {
+  e.preventDefault();
+  vscode.postMessage({ type: 'open' });
+});
 
 function optionalInt(id: string): number | undefined {
   const el = document.getElementById(id) as HTMLInputElement;

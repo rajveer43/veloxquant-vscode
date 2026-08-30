@@ -114,6 +114,9 @@ ${body}
       case 'infer':
         this.handleInfer();
         break;
+      case 'open':
+        void vscode.commands.executeCommand('veloxquant.openPlaygroundEditor');
+        break;
       default:
         break;
     }
