@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/rajveer43/veloxquant-vscode/compare/v0.4.1...v0.4.2) (2026-09-01)
+
+
+### Bug Fixes
+
+* address QA report findings and misc panel/status improvements ([915747e](https://github.com/rajveer43/veloxquant-vscode/commit/915747e9d23acf5d499d5c1ab59d634b4d128b20))
+
 ## [0.4.1](https://github.com/rajveer43/veloxquant-vscode/compare/v0.4.0...v0.4.1) (2026-08-30)
 
 
