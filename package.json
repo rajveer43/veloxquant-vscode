@@ -107,8 +107,10 @@
           "description": "Explicit path to a Python interpreter with VeloxQuant-MLX installed. Leave blank to use the interpreter selected via the Python extension."
         },
         "veloxquant.panelPort": {
-          "type": "number",
+          "type": "integer",
           "default": 7860,
+          "minimum": 1024,
+          "maximum": 65535,
           "description": "Port for the local VeloxQuant-MLX control panel server (loopback only, not configurable to any other host)."
         },
         "veloxquant.autoDetectHardware": {

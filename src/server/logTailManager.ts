@@ -10,6 +10,7 @@ import * as vscode from 'vscode';
 import { PanelServerManager } from './panelServerManager';
 
 const POLL_INTERVAL_MS = 2000;
+const IDLE_CHECK_INTERVAL_MS = 10000;
 
 interface LogLine {
   stream: string;
@@ -19,7 +20,7 @@ interface LogLine {
 
 export class LogTailManager implements vscode.Disposable {
   private readonly outputChannel: vscode.OutputChannel;
-  private timer: ReturnType<typeof setInterval> | undefined;
+  private timer: ReturnType<typeof setTimeout> | undefined;
   private since = 0;
   private wasActive = false;
   private readonly getManager: () => PanelServerManager | undefined;
@@ -33,53 +34,51 @@ export class LogTailManager implements vscode.Disposable {
     if (this.timer) {
       return;
     }
-    this.timer = setInterval(() => void this.poll(), POLL_INTERVAL_MS);
     void this.poll();
   }
 
   private async poll(): Promise<void> {
     const manager = this.getManager();
     if (!manager) {
-      return;
-    }
-
-    let status;
-    try {
-      status = await manager.client.getStatus(2000);
-    } catch {
-      return;
-    }
-
-    const isActive = status.state === 'starting' || status.state === 'running';
-
-    // A fresh start (inactive -> starting/running) means the supervisor
-    // cleared its log buffer server-side; reset our offset so we don't
-    // request a `since` index past the new buffer's end. Checked before
-    // updating `wasActive` so a transient getStatus() failure mid-restart
-    // (caught above) can't suppress the reset on the next successful poll.
-    if (isActive && !this.wasActive) {
-      this.since = 0;
-    }
-    this.wasActive = isActive;
-
-    if (status.state === 'stopped') {
+      // Compression Lab hasn't been opened (yet) this session — nothing to
+      // tail. Check back at a slower cadence instead of hitting a
+      // nonexistent server every 2s for the extension host's whole lifetime.
+      this.timer = setTimeout(() => void this.poll(), IDLE_CHECK_INTERVAL_MS);
       return;
     }
 
     try {
-      const { lines } = await manager.client.getLogs(this.since);
-      for (const raw of lines as LogLine[]) {
-        this.outputChannel.appendLine(`[${raw.stream}] ${raw.text}`);
+      const status = await manager.client.getStatus(2000);
+
+      const isActive = status.state === 'starting' || status.state === 'running';
+
+      // A fresh start (inactive -> starting/running) means the supervisor
+      // cleared its log buffer server-side; reset our offset so we don't
+      // request a `since` index past the new buffer's end. Checked before
+      // updating `wasActive` so a transient getStatus() failure mid-restart
+      // (caught above) can't suppress the reset on the next successful poll.
+      if (isActive && !this.wasActive) {
+        this.since = 0;
       }
-      this.since += lines.length;
+      this.wasActive = isActive;
+
+      if (status.state !== 'stopped') {
+        const { lines } = await manager.client.getLogs(this.since);
+        for (const raw of lines as LogLine[]) {
+          this.outputChannel.appendLine(`[${raw.stream}] ${raw.text}`);
+        }
+        this.since += lines.length;
+      }
     } catch {
       // Best-effort tail; a transient fetch failure just waits for the next poll.
     }
+
+    this.timer = setTimeout(() => void this.poll(), POLL_INTERVAL_MS);
   }
 
   dispose(): void {
     if (this.timer) {
-      clearInterval(this.timer);
+      clearTimeout(this.timer);
       this.timer = undefined;
     }
     this.outputChannel.dispose();

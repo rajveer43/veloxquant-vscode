@@ -20,7 +20,12 @@ function renderLoading(): void {
 }
 
 function renderLocal(url: string): void {
-  root.innerHTML = `<iframe id="lab-frame" src="${url}" title="VeloxQuant-MLX Compression Lab"></iframe>`;
+  root.innerHTML = '';
+  const iframe = document.createElement('iframe');
+  iframe.id = 'lab-frame';
+  iframe.src = url;
+  iframe.title = 'VeloxQuant-MLX Compression Lab';
+  root.appendChild(iframe);
 }
 
 function escapeHtml(s: string): string {

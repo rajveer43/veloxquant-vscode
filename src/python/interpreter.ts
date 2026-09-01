@@ -14,6 +14,7 @@
  * get wrong.
  */
 import * as vscode from 'vscode';
+import { promises as fs } from 'node:fs';
 
 export interface InterpreterResolution {
   /** Absolute path to a Python interpreter, or undefined if none resolved. */
@@ -92,6 +93,24 @@ export async function resolveInterpreter(): Promise<InterpreterResolution> {
   }
 
   return { path: undefined, source: 'none' };
+}
+
+/**
+ * Minimal sanity check on a resolved interpreter path before it's handed to
+ * `spawn`/`execFile`: does it exist, and is it a file (not a directory)?
+ * Deliberately doesn't check executability — that varies by platform and
+ * the exec call itself will surface `EACCES` clearly enough.
+ */
+export async function validateInterpreterPath(interpreterPath: string): Promise<string | undefined> {
+  try {
+    const stat = await fs.stat(interpreterPath);
+    if (stat.isDirectory()) {
+      return `"${interpreterPath}" is a directory, not a Python interpreter.`;
+    }
+    return undefined;
+  } catch {
+    return `Python interpreter not found at "${interpreterPath}".`;
+  }
 }
 
 /** Opens the built-in Python extension interpreter picker. */

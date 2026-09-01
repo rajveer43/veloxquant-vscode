@@ -6,8 +6,8 @@
  *
  * Only shown while `PanelServerManager` exists (i.e. the Compression Lab
  * has been opened at least once this session) and the supervised server is
- * `starting` or `running`. Hidden the rest of the time so it does not imply
- * a server is available before one has ever been started.
+ * `starting`, `running`, or `error`. Hidden when `stopped` so it does not
+ * imply a server is available before one has ever been started.
  */
 import * as vscode from 'vscode';
 import { PanelServerManager } from './panelServerManager';
@@ -59,8 +59,16 @@ export class StatusBarManager implements vscode.Disposable {
       return;
     }
 
-    if (status.state !== 'starting' && status.state !== 'running') {
+    if (status.state === 'stopped') {
       this.item.hide();
+      return;
+    }
+
+    if (status.state === 'error') {
+      this.item.text = '$(error) VeloxQuant-MLX: error';
+      const detail = status.error ? `: ${status.error}` : '';
+      this.item.tooltip = `VeloxQuant-MLX inference server failed${detail}. Click to open the Compression Lab.`;
+      this.item.show();
       return;
     }
 

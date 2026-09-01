@@ -37,8 +37,14 @@ export async function profileActiveSession(getManager: () => PanelServerManager 
     return;
   }
 
-  const running = await manager.isInferenceServerRunning();
-  if (!running) {
+  const state = await manager.getInferenceServerState();
+  if (state === 'error') {
+    void vscode.window.showErrorMessage(
+      'VeloxQuant-MLX: the inference server is in an error state and cannot be profiled.'
+    );
+    return;
+  }
+  if (state !== 'running') {
     void vscode.window.showInformationMessage('VeloxQuant-MLX: no inference server is running to profile.');
     return;
   }

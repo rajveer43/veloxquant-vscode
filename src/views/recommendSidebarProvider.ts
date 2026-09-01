@@ -122,6 +122,20 @@ ${body}
     }
   }
 
+  /**
+   * Re-runs the same auto-detect/prefill logic as the initial 'ready'
+   * handshake, for the "Refresh Recommendation Form" command. Reveals the
+   * sidebar if it isn't visible so the refreshed prefill is actually seen.
+   */
+  async refresh(): Promise<boolean> {
+    if (!this.view) {
+      return false;
+    }
+    this.view.show?.(true);
+    await this.handleReady();
+    return true;
+  }
+
   private async handleReady(): Promise<void> {
     if (process.platform !== 'darwin' || process.arch !== 'arm64') {
       this.post({ type: 'platformNotice', message: 'VeloxQuant-MLX targets Apple Silicon Macs. Recommendations may not work on this host.' });

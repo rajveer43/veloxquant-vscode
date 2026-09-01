@@ -44,10 +44,11 @@ export class PlaygroundLauncherProvider implements vscode.WebviewViewProvider {
 </body>
 </html>`;
 
-    webviewView.webview.onDidReceiveMessage((message: { type: string }) => {
+    const messageListener = webviewView.webview.onDidReceiveMessage((message: { type: string }) => {
       if (message.type === 'open') {
         void vscode.commands.executeCommand('veloxquant.openPlaygroundEditor');
       }
     });
+    webviewView.onDidDispose(() => messageListener.dispose());
   }
 }

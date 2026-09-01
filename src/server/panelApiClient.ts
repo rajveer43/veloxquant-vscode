@@ -102,11 +102,32 @@ function requestJson<T>(port: number, path: string, options: { method?: string; 
   });
 }
 
+const STATUS_STATES = new Set(['stopped', 'starting', 'running', 'error']);
+
+/**
+ * True only if `value` actually has the shape of a `StatusResponse` — used
+ * to distinguish the real VeloxQuant-MLX panel from some unrelated process
+ * that happens to be listening on the configured port and answers `/api/status`
+ * with an unrelated 2xx/JSON body (or an empty one, since `requestJson`
+ * resolves `{}` for an empty response).
+ */
+function isStatusResponse(value: unknown): value is StatusResponse {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const v = value as Record<string, unknown>;
+  return typeof v.state === 'string' && STATUS_STATES.has(v.state) && (v.pid === null || typeof v.pid === 'number');
+}
+
 export class PanelApiClient {
   constructor(private readonly port: number) {}
 
   async getStatus(timeoutMs = 1500): Promise<StatusResponse> {
-    return requestJson<StatusResponse>(this.port, '/api/status', { timeoutMs });
+    const status = await requestJson<StatusResponse>(this.port, '/api/status', { timeoutMs });
+    if (!isStatusResponse(status)) {
+      throw new Error('Unexpected response from /api/status: does not look like a VeloxQuant-MLX panel.');
+    }
+    return status;
   }
 
   async isReachable(timeoutMs = 800): Promise<boolean> {
