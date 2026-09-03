@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.3](https://github.com/rajveer43/veloxquant-vscode/compare/v0.4.2...v0.4.3) (2026-09-03)
+
+
+### Bug Fixes
+
+* resolve code review findings across panel server lifecycle and API client ([123833d](https://github.com/rajveer43/veloxquant-vscode/commit/123833d1b132ea13d7a25a2aee6f44526c65856b))
+
 ## [0.4.2](https://github.com/rajveer43/veloxquant-vscode/compare/v0.4.1...v0.4.2) (2026-09-01)
 
 
