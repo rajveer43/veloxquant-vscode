@@ -51,7 +51,11 @@ export async function reapOrphanedPanelProcess(context: vscode.ExtensionContext)
     return;
   }
 
-  if (isPidAlive(tracked.pid)) {
+  // Guard against PID reuse: only kill if the tracked PID is alive *and* the
+  // tracked port is actually answering as a VeloxQuant-MLX panel. Without
+  // this, an OS that reassigns the stale PID to an unrelated process group
+  // after an unclean exit would have its whole group killed by SIGTERM.
+  if (isPidAlive(tracked.pid) && (await new PanelApiClient(tracked.port).isReachable())) {
     try {
       // Negative PID targets the whole process group we detached it into,
       // so any children the panel itself spawned are cleaned up too.
@@ -205,18 +209,26 @@ export class PanelServerManager {
   }
 
   /**
-   * Stops the child process we spawned, if any. Warns (does not silently
-   * kill) if the supervised inference server is currently running — the
-   * caller is expected to confirm with the user first via
-   * `checkInferenceRunningBeforeDispose`.
+   * Stops the child process we spawned, if any. Does not check whether the
+   * supervised inference server is currently running — callers that need to
+   * warn/confirm with the user first must check `isInferenceServerRunning()`
+   * (or `getInferenceServerState()`) themselves before calling this, as
+   * `extension.ts`'s `handlePanelPortChanged` and `playgroundPanel.ts`'s
+   * `handleDispose` do.
    */
   async dispose(): Promise<void> {
-    if (this.child && !this.child.killed && this.child.pid !== undefined) {
-      try {
-        // Kill the detached process group, not just the immediate child,
-        // so anything the panel itself spawned goes down too.
-        process.kill(-this.child.pid, 'SIGTERM');
-      } catch {
+    if (this.child && !this.child.killed) {
+      if (this.child.pid !== undefined) {
+        try {
+          // Kill the detached process group, not just the immediate child,
+          // so anything the panel itself spawned goes down too.
+          process.kill(-this.child.pid, 'SIGTERM');
+        } catch {
+          this.child.kill();
+        }
+      } else {
+        // No PID assigned (e.g. spawn failed before the OS assigned one) —
+        // still attempt cleanup on the child handle itself.
         this.child.kill();
       }
     }
@@ -230,8 +242,7 @@ export class PanelServerManager {
    * panel process on webview dispose.
    */
   async isInferenceServerRunning(): Promise<boolean> {
-    const state = await this.getInferenceServerState();
-    return state === 'running';
+    return (await this.classifyInferenceServerState()) === 'running';
   }
 
   /**
@@ -247,5 +258,20 @@ export class PanelServerManager {
     } catch {
       return undefined;
     }
+  }
+
+  /**
+   * Collapses the raw inference server state into the three buckets that
+   * every caller needing to warn/act on it branches on: a crashed server
+   * ('error'), a live one ('running'), or anything else — stopped, starting,
+   * or unreachable — treated as idle. Callers that need the raw state (e.g.
+   * to show `status.error` detail) should still use `getInferenceServerState`.
+   */
+  async classifyInferenceServerState(): Promise<'error' | 'running' | 'idle'> {
+    const state = await this.getInferenceServerState();
+    if (state === 'error') {
+      return 'error';
+    }
+    return state === 'running' ? 'running' : 'idle';
   }
 }

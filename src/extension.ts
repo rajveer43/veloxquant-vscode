@@ -3,6 +3,7 @@ import { RecommendSidebarProvider } from './views/recommendSidebarProvider';
 import { PlaygroundPanel } from './views/playgroundPanel';
 import { PlaygroundLauncherProvider } from './views/playgroundLauncherProvider';
 import { PanelServerManager, reapOrphanedPanelProcess } from './server/panelServerManager';
+import { DEFAULT_PANEL_PORT } from './server/panelApiClient';
 import { StatusBarManager } from './server/statusBarManager';
 import { LogTailManager } from './server/logTailManager';
 import { profileActiveSession } from './server/profileManager';
@@ -12,6 +13,8 @@ let serverManager: PanelServerManager | undefined;
 let statusBarManager: StatusBarManager | undefined;
 let logTailManager: LogTailManager | undefined;
 let extensionContext: vscode.ExtensionContext | undefined;
+/** Tracks an in-flight `getOrCreateServerManager` call so concurrent callers share one attempt instead of racing to construct duplicate managers. */
+let inFlightGetOrCreateServerManager: Promise<PanelServerManager | undefined> | undefined;
 
 export function activate(context: vscode.ExtensionContext): void {
   extensionContext = context;
@@ -64,7 +67,7 @@ export function activate(context: vscode.ExtensionContext): void {
         return;
       }
 
-      const state = await serverManager.getInferenceServerState();
+      const state = await serverManager.classifyInferenceServerState();
       if (state === 'error') {
         void vscode.window.showWarningMessage(
           'VeloxQuant-MLX: the inference server is in an error state. Stopping it now.'
@@ -131,8 +134,18 @@ async function handlePanelPortChanged(): Promise<void> {
     return;
   }
 
-  const inferenceRunning = await serverManager.isInferenceServerRunning();
+  // Snapshot and clear the module-level reference before the first await, so
+  // a concurrent getOrCreateServerManager() call can't hand out this manager
+  // to a new panel while we're about to dispose it (and so it can instead
+  // build a fresh manager on the new port right away).
+  const manager = serverManager;
+  serverManager = undefined;
+
+  const inferenceRunning = await manager.isInferenceServerRunning();
   if (inferenceRunning) {
+    // Still in use — put it back so it isn't orphaned/leaked, and leave it
+    // running on the old port until the user stops it themselves.
+    serverManager = manager;
     void vscode.window.showWarningMessage(
       'VeloxQuant-MLX: "panelPort" changed, but the panel server is still in use (an inference server is running). ' +
         'Stop it and reopen the Compression Lab to apply the new port.'
@@ -140,8 +153,7 @@ async function handlePanelPortChanged(): Promise<void> {
     return;
   }
 
-  await serverManager.dispose();
-  serverManager = undefined;
+  await manager.dispose();
   void vscode.window.showInformationMessage(
     'VeloxQuant-MLX: "panelPort" changed. Reopen the Compression Lab to start the panel server on the new port.'
   );
@@ -153,6 +165,22 @@ async function handlePanelPortChanged(): Promise<void> {
  * for the life of the extension host.
  */
 async function getOrCreateServerManager(): Promise<PanelServerManager | undefined> {
+  if (serverManager) {
+    return serverManager;
+  }
+
+  if (inFlightGetOrCreateServerManager) {
+    return inFlightGetOrCreateServerManager;
+  }
+
+  const attempt = getOrCreateServerManagerInternal().finally(() => {
+    inFlightGetOrCreateServerManager = undefined;
+  });
+  inFlightGetOrCreateServerManager = attempt;
+  return attempt;
+}
+
+async function getOrCreateServerManagerInternal(): Promise<PanelServerManager | undefined> {
   if (serverManager) {
     return serverManager;
   }
@@ -173,8 +201,6 @@ async function getOrCreateServerManager(): Promise<PanelServerManager | undefine
   serverManager = new PanelServerManager(resolution.path, port, extensionContext);
   return serverManager;
 }
-
-const DEFAULT_PANEL_PORT = 7860;
 
 /**
  * Reads `veloxquant.panelPort` and falls back to the default if it isn't a

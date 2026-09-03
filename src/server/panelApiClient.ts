@@ -6,6 +6,9 @@
  */
 import * as http from 'node:http';
 
+/** Default `veloxquant.panelPort` value, shared by every site that reads that setting. */
+export const DEFAULT_PANEL_PORT = 7860;
+
 export interface MethodInfo {
   name: string;
   family: string;
@@ -116,7 +119,36 @@ function isStatusResponse(value: unknown): value is StatusResponse {
     return false;
   }
   const v = value as Record<string, unknown>;
-  return typeof v.state === 'string' && STATUS_STATES.has(v.state) && (v.pid === null || typeof v.pid === 'number');
+  return (
+    typeof v.state === 'string' &&
+    STATUS_STATES.has(v.state) &&
+    (v.pid === null || typeof v.pid === 'number') &&
+    typeof v.config === 'object' &&
+    v.config !== null
+  );
+}
+
+/**
+ * Minimal shape guard shared by the endpoints below that don't have a
+ * dedicated validator: true only if `value` is a non-null, non-array object
+ * with all of `keys` present. Catches the same "foreign process answers on
+ * this port" bug class `isStatusResponse` guards against for `/api/status` —
+ * not a full structural validator, but enough to reject an unrelated
+ * service's JSON body instead of returning it as if it were real panel data.
+ */
+function hasShape(value: unknown, keys: string[]): value is Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return false;
+  }
+  const v = value as Record<string, unknown>;
+  return keys.every((key) => key in v);
+}
+
+function assertShape<T>(value: unknown, keys: string[], path: string): T {
+  if (!hasShape(value, keys)) {
+    throw new Error(`Unexpected response from ${path}: does not look like a VeloxQuant-MLX panel.`);
+  }
+  return value as T;
 }
 
 export class PanelApiClient {
@@ -140,11 +172,15 @@ export class PanelApiClient {
   }
 
   async getMethods(): Promise<MethodsResponse> {
-    return requestJson<MethodsResponse>(this.port, '/api/methods');
+    const path = '/api/methods';
+    const result = await requestJson<unknown>(this.port, path);
+    return assertShape<MethodsResponse>(result, ['default_serve_method', 'accounting_only', 'methods'], path);
   }
 
   async getModels(): Promise<{ models: unknown[] }> {
-    return requestJson(this.port, '/api/models');
+    const path = '/api/models';
+    const result = await requestJson<unknown>(this.port, path);
+    return assertShape<{ models: unknown[] }>(result, ['models'], path);
   }
 
   async getMemory(): Promise<Record<string, unknown>> {
@@ -152,19 +188,33 @@ export class PanelApiClient {
   }
 
   async getLogs(since = 0): Promise<{ lines: unknown[]; total: number }> {
-    return requestJson(this.port, `/api/logs?since=${since}`);
+    const path = `/api/logs?since=${since}`;
+    const result = await requestJson<unknown>(this.port, path);
+    return assertShape<{ lines: unknown[]; total: number }>(result, ['lines', 'total'], path);
   }
 
   async getProfile(): Promise<ProfileResponse> {
-    return requestJson<ProfileResponse>(this.port, '/api/profile', { timeoutMs: 10000 });
+    const path = '/api/profile';
+    const result = await requestJson<unknown>(this.port, path, { timeoutMs: 10000 });
+    return assertShape<ProfileResponse>(result, ['method', 'layers'], path);
   }
 
   async start(config: Record<string, unknown>): Promise<StatusResponse> {
-    return requestJson<StatusResponse>(this.port, '/api/start', { method: 'POST', body: config });
+    const path = '/api/start';
+    const result = await requestJson<unknown>(this.port, path, { method: 'POST', body: config });
+    if (!isStatusResponse(result)) {
+      throw new Error(`Unexpected response from ${path}: does not look like a VeloxQuant-MLX panel.`);
+    }
+    return result;
   }
 
   async stop(): Promise<StatusResponse> {
-    return requestJson<StatusResponse>(this.port, '/api/stop', { method: 'POST' });
+    const path = '/api/stop';
+    const result = await requestJson<unknown>(this.port, path, { method: 'POST' });
+    if (!isStatusResponse(result)) {
+      throw new Error(`Unexpected response from ${path}: does not look like a VeloxQuant-MLX panel.`);
+    }
+    return result;
   }
 
   baseUrl(): string {

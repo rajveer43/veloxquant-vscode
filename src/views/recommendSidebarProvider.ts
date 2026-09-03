@@ -12,7 +12,7 @@ import { buildFullSnippet } from '../insert/snippetBuilder';
 import { insertSnippet, pickInsertTarget } from '../insert/targetPicker';
 import { inferModelShapeFromActiveEditor } from '../insert/modelInference';
 import { detectHardware } from '../hardware/detect';
-import { PanelApiClient } from '../server/panelApiClient';
+import { PanelApiClient, DEFAULT_PANEL_PORT } from '../server/panelApiClient';
 
 const ISSUE_TEMPLATE_URL = 'https://github.com/rajveer43/veloxquant-vscode/issues/new';
 
@@ -212,7 +212,7 @@ ${body}
   /** Uses the local panel server's /api/methods docs_url field when reachable; omits the link otherwise (never guesses a slug). */
   private async tryResolveDocsUrl(method: string): Promise<string | undefined> {
     try {
-      const port = vscode.workspace.getConfiguration('veloxquant').get<number>('panelPort', 7860);
+      const port = vscode.workspace.getConfiguration('veloxquant').get<number>('panelPort', DEFAULT_PANEL_PORT);
       const client = new PanelApiClient(port);
       if (!(await client.isReachable(500))) {
         return undefined;

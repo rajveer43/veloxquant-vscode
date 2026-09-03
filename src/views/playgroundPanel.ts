@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { PanelServerManager, PanelModuleNotFoundError } from '../server/panelServerManager';
+import { DEFAULT_PANEL_PORT } from '../server/panelApiClient';
 import { buildPipInstallCommand } from '../python/interpreter';
 
 const HOSTED_PLAYGROUND_URL = 'https://veloxquant-mlx.netlify.app/playground.html';
@@ -47,7 +48,7 @@ export class PlaygroundPanel {
     const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'dist', 'webview-ui', 'playground.js'));
     const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'dist', 'webview-ui', 'playground.css'));
 
-    const port = vscode.workspace.getConfiguration('veloxquant').get<number>('panelPort', 7860);
+    const port = vscode.workspace.getConfiguration('veloxquant').get<number>('panelPort', DEFAULT_PANEL_PORT);
     const originSource = `http://127.0.0.1:${port}`;
 
     const csp = [
@@ -158,14 +159,13 @@ export class PlaygroundPanel {
       return;
     }
 
-    const inferenceRunning = await manager.isInferenceServerRunning();
-    if (inferenceRunning) {
-      const choice = await vscode.window.showWarningMessage(
-        'An inference server started from the Compression Lab is still running. Stop the panel server and the inference server too?',
-        { modal: false },
-        'Stop both',
-        'Leave running'
-      );
+    const state = await manager.classifyInferenceServerState();
+    if (state === 'running' || state === 'error') {
+      const message =
+        state === 'error'
+          ? 'An inference server started from the Compression Lab is in an error state. Stop the panel server and the inference server too?'
+          : 'An inference server started from the Compression Lab is still running. Stop the panel server and the inference server too?';
+      const choice = await vscode.window.showWarningMessage(message, { modal: false }, 'Stop both', 'Leave running');
       if (choice !== 'Stop both') {
         return;
       }

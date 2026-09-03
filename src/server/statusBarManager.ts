@@ -12,18 +12,9 @@
 import * as vscode from 'vscode';
 import { PanelServerManager } from './panelServerManager';
 import { StatusResponse } from './panelApiClient';
+import { formatBytes } from './format';
 
 const POLL_INTERVAL_MS = 5000;
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024 * 1024) {
-    return `${(bytes / 1024).toFixed(0)} KB`;
-  }
-  if (bytes < 1024 * 1024 * 1024) {
-    return `${(bytes / (1024 * 1024)).toFixed(0)} MB`;
-  }
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-}
 
 export class StatusBarManager implements vscode.Disposable {
   private readonly item: vscode.StatusBarItem;

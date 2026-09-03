@@ -10,19 +10,7 @@
  */
 import * as vscode from 'vscode';
 import { PanelServerManager } from './panelServerManager';
-
-function formatBytes(bytes: number | null): string {
-  if (bytes == null) {
-    return '-';
-  }
-  if (bytes < 1024 * 1024) {
-    return `${(bytes / 1024).toFixed(0)} KB`;
-  }
-  if (bytes < 1024 * 1024 * 1024) {
-    return `${(bytes / (1024 * 1024)).toFixed(0)} MB`;
-  }
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-}
+import { formatBytes } from './format';
 
 function formatMs(ms: number | null): string {
   return ms == null ? '-' : `${ms.toFixed(2)} ms`;
@@ -37,7 +25,7 @@ export async function profileActiveSession(getManager: () => PanelServerManager 
     return;
   }
 
-  const state = await manager.getInferenceServerState();
+  const state = await manager.classifyInferenceServerState();
   if (state === 'error') {
     void vscode.window.showErrorMessage(
       'VeloxQuant-MLX: the inference server is in an error state and cannot be profiled.'
