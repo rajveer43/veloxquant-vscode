@@ -9,6 +9,13 @@
 * add Benchmark Model command surfacing `@veloxquant/sdk`'s `benchmark()` as a Markdown report
 * add `@veloxquant/sdk` as this extension's first runtime npm dependency, routed through a single interpreter-resolution policy (`src/sdk/client.ts`) that reuses the extension's existing Python interpreter resolver rather than the SDK's own independent one
 
+## [0.5.0](https://github.com/rajveer43/veloxquant-vscode/compare/v0.4.3...v0.5.0) (2026-09-08)
+
+
+### Features
+
+* add SDK-parity Chat Playground, local model management, agent demo, and benchmark command ([3e6ecbd](https://github.com/rajveer43/veloxquant-vscode/commit/3e6ecbdf873ba2cd564d0cd4260a7ebc9b4960c1))
+
 ## [0.4.3](https://github.com/rajveer43/veloxquant-vscode/compare/v0.4.2...v0.4.3) (2026-09-03)
 
 
