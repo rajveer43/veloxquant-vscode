@@ -9,6 +9,14 @@
 * add Benchmark Model command surfacing `@veloxquant/sdk`'s `benchmark()` as a Markdown report
 * add `@veloxquant/sdk` as this extension's first runtime npm dependency, routed through a single interpreter-resolution policy (`src/sdk/client.ts`) that reuses the extension's existing Python interpreter resolver rather than the SDK's own independent one
 
+## [0.5.1](https://github.com/rajveer43/veloxquant-vscode/compare/v0.5.0...v0.5.1) (2026-09-08)
+
+
+### Bug Fixes
+
+* **playground:** surface method-discovery failures in the panel webview ([7b86f38](https://github.com/rajveer43/veloxquant-vscode/commit/7b86f389a4feb19b2978a3c528a7e32f206aa1ae))
+* **playground:** surface method-discovery failures in the panel webview ([cc6cb52](https://github.com/rajveer43/veloxquant-vscode/commit/cc6cb52e673bb91228add13bc7341548122f860c))
+
 ## [0.5.0](https://github.com/rajveer43/veloxquant-vscode/compare/v0.4.3...v0.5.0) (2026-09-08)
 
 
