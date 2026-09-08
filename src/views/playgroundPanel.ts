@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { PanelServerManager, PanelModuleNotFoundError } from '../server/panelServerManager';
-import { DEFAULT_PANEL_PORT } from '../server/panelApiClient';
+import { DEFAULT_PANEL_PORT, methodAvailabilityWarning } from '../server/panelApiClient';
 import { buildPipInstallCommand } from '../python/interpreter';
 
 const HOSTED_PLAYGROUND_URL = 'https://veloxquant-mlx.netlify.app/playground.html';
@@ -131,7 +131,13 @@ export class PlaygroundPanel {
 
     try {
       await manager.ensureRunning();
-      this.post({ type: 'ready', url: manager.client.baseUrl() });
+      let warning: string | undefined;
+      try {
+        warning = methodAvailabilityWarning(await manager.client.getMethods());
+      } catch (err) {
+        warning = `Method discovery failed: ${(err as Error).message} Check the VeloxQuant-MLX Panel output and restart the backend after correcting its environment.`;
+      }
+      this.post({ type: 'ready', url: manager.client.baseUrl(), warning });
     } catch (err) {
       if (err instanceof PanelModuleNotFoundError) {
         this.post({
