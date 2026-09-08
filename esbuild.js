@@ -12,6 +12,7 @@ function copyStaticAssets() {
   const pairs = [
     ['src/webview-ui/recommend/style.css', 'dist/webview-ui/recommend.css'],
     ['src/webview-ui/playground/style.css', 'dist/webview-ui/playground.css'],
+    ['src/webview-ui/chat/style.css', 'dist/webview-ui/chat.css'],
     ['src/webview-ui/recommend/index.html', 'dist/webview-ui/recommend.html'],
   ];
   for (const [src, dest] of pairs) {
@@ -51,7 +52,12 @@ async function main() {
     platform: 'node',
     target: 'node18',
     outfile: 'dist/extension.js',
-    external: ['vscode'],
+    // @modelcontextprotocol/sdk is an optional peer dependency of
+    // @veloxquant/sdk's Agent.useMcpServer() (dynamically imported by the
+    // SDK itself so non-MCP consumers never pay for it) — not installed
+    // here since this extension doesn't use MCP tool sources. Marking it
+    // external keeps esbuild from trying to resolve it at bundle time.
+    external: ['vscode', '@modelcontextprotocol/sdk'],
     logLevel: 'silent',
     plugins: [problemMatcherPlugin],
   });
@@ -59,6 +65,7 @@ async function main() {
   const webviewEntries = [
     ['src/webview-ui/recommend/main.ts', 'dist/webview-ui/recommend.js'],
     ['src/webview-ui/playground/shell.ts', 'dist/webview-ui/playground.js'],
+    ['src/webview-ui/chat/shell.ts', 'dist/webview-ui/chat.js'],
   ];
 
   const webviewCtxs = await Promise.all(
