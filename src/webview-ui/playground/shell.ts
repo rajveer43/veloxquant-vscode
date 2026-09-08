@@ -19,8 +19,15 @@ function renderLoading(): void {
   root.innerHTML = `<div class="center"><p>Starting the VeloxQuant-MLX compression lab…</p></div>`;
 }
 
-function renderLocal(url: string): void {
+function renderLocal(url: string, warning?: string): void {
   root.innerHTML = '';
+  if (warning) {
+    const notice = document.createElement('p');
+    notice.className = 'discovery-warning';
+    notice.setAttribute('role', 'alert');
+    notice.textContent = warning;
+    root.appendChild(notice);
+  }
   const iframe = document.createElement('iframe');
   iframe.id = 'lab-frame';
   iframe.src = url;
@@ -79,7 +86,7 @@ window.addEventListener('message', (event: MessageEvent) => {
       renderLoading();
       break;
     case 'ready':
-      renderLocal(msg.url as string);
+      renderLocal(msg.url as string, msg.warning as string | undefined);
       break;
     case 'unavailable':
       renderUnavailable(msg.message as string);

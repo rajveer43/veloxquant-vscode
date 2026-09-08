@@ -38,6 +38,23 @@ export interface MethodsResponse {
   methods: MethodInfo[];
 }
 
+/** Reject broken discovery payloads rather than treating missing flags as unsupported methods. */
+export function parseMethodsResponse(value: unknown): MethodsResponse {
+  const result = assertShape<MethodsResponse>(value, ['default_serve_method', 'accounting_only', 'methods'], '/api/methods');
+  if (typeof result.default_serve_method !== 'string' || typeof result.accounting_only !== 'boolean' ||
+      !Array.isArray(result.methods) || result.methods.some((m) => !m || typeof m.name !== 'string' ||
+        typeof m.is_servable !== 'boolean' || (m.unsupported_reason != null && typeof m.unsupported_reason !== 'string'))) {
+    throw new Error('Invalid method-discovery response from /api/methods. Check the backend package version.');
+  }
+  return result;
+}
+
+export function methodAvailabilityWarning(data: MethodsResponse): string | undefined {
+  if (data.methods.some((method) => method.is_servable)) return undefined;
+  const reasons = [...new Set(data.methods.map((method) => method.unsupported_reason).filter(Boolean))];
+  return `No serving methods are available. ${reasons.join('; ')} Check dependencies in the Python environment running the panel, then restart the panel backend to repeat its cached checks.`;
+}
+
 export interface StatusResponse {
   state: 'stopped' | 'starting' | 'running' | 'error';
   pid: number | null;
@@ -173,8 +190,9 @@ export class PanelApiClient {
 
   async getMethods(): Promise<MethodsResponse> {
     const path = '/api/methods';
-    const result = await requestJson<unknown>(this.port, path);
-    return assertShape<MethodsResponse>(result, ['default_serve_method', 'accounting_only', 'methods'], path);
+    // Cold discovery imports and probes every cache; it can exceed the normal request timeout.
+    const result = await requestJson<unknown>(this.port, path, { timeoutMs: 60000 });
+    return parseMethodsResponse(result);
   }
 
   async getModels(): Promise<{ models: unknown[] }> {
