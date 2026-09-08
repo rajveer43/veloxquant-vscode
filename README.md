@@ -78,6 +78,51 @@ server's stdout/stderr are also tailed live into an output channel named
 **VeloxQuant-MLX Panel** channel, which only carries the control-plane
 process's own logs.
 
+### Chat Playground
+
+Command **VeloxQuant-MLX: Open Chat Playground**. A second editor-area panel,
+alongside the Compression Lab, that loads a local model through
+`@veloxquant/sdk` directly (not the CLI) and lets you chat with it, streaming
+tokens live. Pick a downloaded model from the dropdown (populated from the
+**Local Models** view below), send a message, and stop generation mid-stream
+without killing the loaded model. Closing the panel stops the underlying
+model process.
+
+An **Agent mode** toggle switches the same chat surface to use the SDK's
+tool-calling `Agent`, with two read-only, editor-native example tools:
+`read_active_file` (the active editor's path and content) and
+`list_workspace_files` (glob-matched workspace paths, respecting
+`.gitignore`/`files.exclude`). Tool calls render as expandable "used tool: …"
+entries in the transcript, distinct from the model's own text. There is
+deliberately no file-write or shell-exec tool — that needs its own
+confirmation-and-sandboxing design.
+
+The model process's stdout/stderr are tailed live into an output channel
+named **VeloxQuant-MLX Chat**, separate from the Compression Lab's own
+channels.
+
+### Local Models
+
+A tree view (in the Compression Lab activity bar container) listing model
+weights already downloaded to your local Hugging Face cache — id, size, and
+last-used time. **Pull new model** downloads a model by Hugging Face id with
+an indeterminate progress notification (downloads have no timeout — they can
+take many minutes). Deleting a model asks for confirmation first, since
+freed weights aren't recoverable without re-downloading.
+
+### Benchmark Model
+
+Command **VeloxQuant-MLX: Benchmark Model**. Runs the SDK's `benchmark()`
+against a model you pick (from your local cache, or a free-text id),
+comparing tokens/sec, time-to-first-token, and measured resident memory
+(RSS) between the default method and an optimized one. This takes minutes —
+it loads the model twice — and reports progress via a notification and the
+**VeloxQuant-MLX Benchmark** output channel. Results open as an untitled
+Markdown document, including the same accounting-only caveat line the SDK
+itself produces when optimized RSS measures higher than the default (yes,
+that can happen — compression byte-count savings and measured resident
+memory are not the same thing).
+
 ## Requirements
 
 - macOS on Apple Silicon (M1–M4) to actually run compression — the
@@ -90,6 +135,12 @@ process's own logs.
 - **VeloxQuant-MLX 0.42.0 or newer** — this is the minimum version that
   supports `recommend --json`. Older installs get a distinct "please
   upgrade" message rather than a generic failure.
+
+The Chat Playground, Local Models, and Benchmark Model features additionally
+depend on [`@veloxquant/sdk`](https://www.npmjs.com/package/@veloxquant/sdk)
+(bundled as this extension's first runtime npm dependency) — no separate
+install step for you, but worth knowing if you're auditing what this
+extension pulls in.
 
 Install the package:
 

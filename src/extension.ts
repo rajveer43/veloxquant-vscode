@@ -8,6 +8,9 @@ import { StatusBarManager } from './server/statusBarManager';
 import { LogTailManager } from './server/logTailManager';
 import { profileActiveSession } from './server/profileManager';
 import { resolveInterpreter, promptSelectInterpreter } from './python/interpreter';
+import { LocalModelsProvider, pullModelCommand, deleteModelCommand } from './views/localModelsProvider';
+import { ChatPlaygroundPanel } from './views/chatPlaygroundPanel';
+import { runBenchmarkCommand } from './server/benchmarkCommand';
 
 let serverManager: PanelServerManager | undefined;
 let statusBarManager: StatusBarManager | undefined;
@@ -98,6 +101,32 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('veloxquant.profileActiveSession', async () => {
       await profileActiveSession(() => serverManager);
     })
+  );
+
+  const localModelsProvider = new LocalModelsProvider();
+  context.subscriptions.push(vscode.window.registerTreeDataProvider(LocalModelsProvider.viewType, localModelsProvider));
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('veloxquant.localModels.refresh', () => localModelsProvider.refresh())
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand('veloxquant.localModels.pull', () => pullModelCommand(localModelsProvider))
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      'veloxquant.localModels.delete',
+      (item?: Parameters<typeof deleteModelCommand>[1]) => deleteModelCommand(localModelsProvider, item)
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('veloxquant.openChatPlayground', async () => {
+      await ChatPlaygroundPanel.createOrShow(context.extensionUri, () => localModelsProvider);
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('veloxquant.benchmarkModel', () => runBenchmarkCommand())
   );
 
   statusBarManager = new StatusBarManager(() => serverManager);

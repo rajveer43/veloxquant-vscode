@@ -52,4 +52,18 @@ suite('VeloxQuant-MLX Extension Integration', () => {
       assert.ok(commands.includes('veloxquant.openPlaygroundEditor'));
     });
   });
+
+  test('SDK-parity commands are contributed', () => {
+    // Same rationale as above: confirms package.json's command
+    // contributions registered, not that the SDK-backed features work end
+    // to end (that needs real Apple Silicon hardware and a downloaded
+    // model — this repo has no way to cover that in CI).
+    return vscode.commands.getCommands(true).then((commands) => {
+      assert.ok(commands.includes('veloxquant.openChatPlayground'));
+      assert.ok(commands.includes('veloxquant.localModels.refresh'));
+      assert.ok(commands.includes('veloxquant.localModels.pull'));
+      assert.ok(commands.includes('veloxquant.localModels.delete'));
+      assert.ok(commands.includes('veloxquant.benchmarkModel'));
+    });
+  });
 });

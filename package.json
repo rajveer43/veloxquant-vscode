@@ -40,7 +40,10 @@
   "activationEvents": [
     "onView:veloxquant.recommendSidebar",
     "onView:veloxquant.playgroundLauncher",
-    "onCommand:veloxquant.openPlaygroundEditor"
+    "onView:veloxquant.localModels",
+    "onCommand:veloxquant.openPlaygroundEditor",
+    "onCommand:veloxquant.openChatPlayground",
+    "onCommand:veloxquant.benchmarkModel"
   ],
   "contributes": {
     "viewsContainers": {
@@ -72,6 +75,11 @@
           "name": "Compression Lab",
           "type": "webview",
           "icon": "media/playground-activitybar-icon.svg"
+        },
+        {
+          "id": "veloxquant.localModels",
+          "name": "Local Models",
+          "icon": "media/playground-activitybar-icon.svg"
         }
       ]
     },
@@ -96,8 +104,58 @@
         "command": "veloxquant.profileActiveSession",
         "title": "VeloxQuant-MLX: Profile Active Session",
         "category": "VeloxQuant-MLX"
+      },
+      {
+        "command": "veloxquant.openChatPlayground",
+        "title": "VeloxQuant-MLX: Open Chat Playground",
+        "category": "VeloxQuant-MLX",
+        "icon": "media/playground-activitybar-icon.svg"
+      },
+      {
+        "command": "veloxquant.localModels.refresh",
+        "title": "VeloxQuant-MLX: Refresh Local Models",
+        "category": "VeloxQuant-MLX",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "veloxquant.localModels.pull",
+        "title": "VeloxQuant-MLX: Pull Local Model",
+        "category": "VeloxQuant-MLX",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "veloxquant.localModels.delete",
+        "title": "VeloxQuant-MLX: Delete Local Model",
+        "category": "VeloxQuant-MLX",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "veloxquant.benchmarkModel",
+        "title": "VeloxQuant-MLX: Benchmark Model",
+        "category": "VeloxQuant-MLX"
       }
     ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "veloxquant.localModels.refresh",
+          "when": "view == veloxquant.localModels",
+          "group": "navigation"
+        },
+        {
+          "command": "veloxquant.localModels.pull",
+          "when": "view == veloxquant.localModels",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "veloxquant.localModels.delete",
+          "when": "view == veloxquant.localModels && viewItem == localModel",
+          "group": "inline"
+        }
+      ]
+    },
     "configuration": {
       "title": "VeloxQuant-MLX",
       "properties": {
@@ -130,6 +188,9 @@
     "test:unit": "node --import tsx --test test/unit/*.test.ts",
     "test:integration": "tsc -p ./test/suite/tsconfig.json && node ./dist-test/test/suite/runTest.js",
     "package": "vsce package --no-dependencies"
+  },
+  "dependencies": {
+    "@veloxquant/sdk": "^0.6.0"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
