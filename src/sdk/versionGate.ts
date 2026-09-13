@@ -7,8 +7,16 @@
  */
 import { execFile } from 'node:child_process';
 import * as vscode from 'vscode';
-import { getInstalledVersion, isVersionSupported, MIN_SUPPORTED_VERSION } from '../python/versionCheck';
-import { resolveInterpreter, promptSelectInterpreter } from '../python/interpreter';
+import {
+  classifyVersion,
+  FEATURE_MINIMUMS,
+  getInstalledVersion,
+  RECOMMENDED_VERSION,
+} from '../python/versionCheck';
+import type { PackageFeature } from '../python/versionCheck';
+import { buildPipInstallCommand, resolveInterpreter, promptSelectInterpreter } from '../python/interpreter';
+
+const recommendedNotices = new Set<string>();
 
 function execFileAsync(file: string, args: string[]): Promise<{ stdout: string; code: number }> {
   return new Promise((resolve, reject) => {
@@ -28,7 +36,15 @@ function execFileAsync(file: string, args: string[]): Promise<{ stdout: string; 
  * fails. Callers should bail out of the SDK-backed action (not proceed and
  * let the SDK fail with a less clear error) when this returns `false`.
  */
-export async function ensureSdkReady(): Promise<boolean> {
+async function offerUpgrade(interpreterPath: string, message: string): Promise<void> {
+  const choice = await vscode.window.showWarningMessage(message, 'Upgrade VeloxQuant-MLX');
+  if (choice !== 'Upgrade VeloxQuant-MLX') return;
+  const terminal = vscode.window.createTerminal('Upgrade VeloxQuant-MLX');
+  terminal.show();
+  terminal.sendText(buildPipInstallCommand(interpreterPath, true));
+}
+
+export async function ensureSdkReady(feature: PackageFeature = 'recommend'): Promise<boolean> {
   const resolution = await resolveInterpreter();
   if (!resolution.path) {
     const choice = await vscode.window.showWarningMessage(
@@ -49,11 +65,33 @@ export async function ensureSdkReady(): Promise<boolean> {
     return false;
   }
 
-  if (!isVersionSupported(version)) {
-    void vscode.window.showWarningMessage(
-      `VeloxQuant-MLX ${version} is installed, but this feature needs ${MIN_SUPPORTED_VERSION}+. Upgrade the package to continue.`
+  const minimum = FEATURE_MINIMUMS[feature];
+  const compatibility = classifyVersion(version, minimum);
+  if (compatibility === 'unsupported') {
+    await offerUpgrade(
+      resolution.path,
+      `VeloxQuant-MLX ${version} is installed, but ${feature} needs ${minimum} or newer.`
     );
     return false;
+  }
+
+  if (compatibility === 'unverifiable') {
+    void vscode.window.showWarningMessage(
+      `VeloxQuant-MLX reported version "${version}". The extension could not verify the ${minimum}+ requirement; the ${feature} command will continue and surface any backend error.`
+    );
+  }
+
+  if (compatibility === 'upgrade-recommended' && !recommendedNotices.has(version)) {
+    recommendedNotices.add(version);
+    const choice = await vscode.window.showInformationMessage(
+      `VeloxQuant-MLX ${version} supports ${feature}; ${RECOMMENDED_VERSION} or newer is recommended for current cache and schema fixes.`,
+      'Upgrade VeloxQuant-MLX'
+    );
+    if (choice === 'Upgrade VeloxQuant-MLX') {
+      const terminal = vscode.window.createTerminal('Upgrade VeloxQuant-MLX');
+      terminal.show();
+      terminal.sendText(buildPipInstallCommand(resolution.path, true));
+    }
   }
 
   return true;

@@ -107,6 +107,22 @@ select {
   padding: 4px;
 }
 
+.toolbar input {
+  min-width: 240px;
+  flex: 1;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border, transparent);
+  padding: 5px 7px;
+}
+
+button:disabled,
+select:disabled,
+input:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
 button {
   background: var(--vscode-button-background);
   color: var(--vscode-button-foreground);

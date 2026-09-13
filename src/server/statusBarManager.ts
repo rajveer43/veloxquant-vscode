@@ -115,11 +115,11 @@ export class StatusBarManager implements vscode.Disposable {
 
     lines.push(
       '',
-      'Click to open the Compression Lab. [Profile session](command:veloxquant.profileActiveSession) · [Stop server](command:veloxquant.stopInferenceServer)'
+      'Click to open the Compression Lab. [Profile a model](command:veloxquant.profileModel) · [Stop server](command:veloxquant.stopInferenceServer)'
     );
 
     const md = new vscode.MarkdownString(lines.join('\n'));
-    md.isTrusted = { enabledCommands: ['veloxquant.profileActiveSession', 'veloxquant.stopInferenceServer'] };
+    md.isTrusted = { enabledCommands: ['veloxquant.profileModel', 'veloxquant.stopInferenceServer'] };
     return md;
   }
 

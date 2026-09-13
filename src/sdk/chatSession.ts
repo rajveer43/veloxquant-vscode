@@ -19,11 +19,13 @@ export class ChatSession {
 
   private constructor() {}
 
-  static async load(modelId: string): Promise<ChatSession> {
+  static async load(modelId: string, method?: string): Promise<ChatSession> {
     const { VeloxQuant, Agent: AgentCtor } = (await import('@veloxquant/sdk')) as { VeloxQuant: typeof VeloxQuantClient; Agent: typeof Agent };
     const session = new ChatSession();
     const client = new VeloxQuant(await getVeloxQuantOptions());
-    session.model = await client.load({ model: modelId, optimize: 'auto' });
+    session.model = await client.load(
+      method ? { model: modelId, method, optimize: false } : { model: modelId, optimize: 'auto' }
+    );
     session.agentCtor = AgentCtor;
     return session;
   }
@@ -53,15 +55,15 @@ export class ChatSession {
     this.getAgent().tool(spec);
   }
 
-  async *stream(prompt: string): AsyncGenerator<StreamChunk> {
+  async *stream(prompt: string, signal?: AbortSignal): AsyncGenerator<StreamChunk> {
     if (!this.model) {
       throw new Error('ChatSession is not loaded.');
     }
-    yield* this.model.stream({ prompt });
+    yield* this.model.stream({ prompt, signal });
   }
 
-  async runAgent(prompt: string): Promise<{ text: string; steps: { toolName: string; args: unknown; result: unknown }[] }> {
-    return this.getAgent().run(prompt);
+  async runAgent(prompt: string, signal?: AbortSignal): Promise<{ text: string; steps: { toolName: string; args: unknown; result: unknown }[] }> {
+    return this.getAgent().run(prompt, { signal });
   }
 
   /** Stops the underlying server process. Safe to call more than once. */

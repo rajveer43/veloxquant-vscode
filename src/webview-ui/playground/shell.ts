@@ -79,6 +79,19 @@ function renderNotInstalled(interpreterPath: string): void {
   });
 }
 
+function renderUpgradeRequired(message: string): void {
+  root.innerHTML = `
+    <div class="center">
+      <p>${escapeHtml(message)}</p>
+      <div class="actions">
+        <button id="upgrade-btn" type="button">Upgrade VeloxQuant-MLX</button>
+        <button id="hosted-btn" type="button" class="secondary">Use hosted version instead</button>
+      </div>
+    </div>`;
+  document.getElementById('upgrade-btn')?.addEventListener('click', () => vscode.postMessage({ type: 'upgradePackage' }));
+  document.getElementById('hosted-btn')?.addEventListener('click', () => vscode.postMessage({ type: 'openHosted' }));
+}
+
 window.addEventListener('message', (event: MessageEvent) => {
   const msg = event.data as { type: string; [key: string]: unknown };
   switch (msg.type) {
@@ -93,6 +106,9 @@ window.addEventListener('message', (event: MessageEvent) => {
       break;
     case 'not-installed':
       renderNotInstalled(msg.interpreterPath as string);
+      break;
+    case 'upgrade-required':
+      renderUpgradeRequired(msg.message as string);
       break;
     default:
       break;

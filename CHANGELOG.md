@@ -4,10 +4,17 @@
 
 ### Features
 
-* add Chat Playground webview with SDK-backed streaming chat and an Agent-mode demo (`read_active_file`, `list_workspace_files` tools)
-* add Local Models tree view for listing, pulling, and deleting cached model weights
-* add Benchmark Model command surfacing `@veloxquant/sdk`'s `benchmark()` as a Markdown report
-* add `@veloxquant/sdk` as this extension's first runtime npm dependency, routed through a single interpreter-resolution policy (`src/sdk/client.ts`) that reuses the extension's existing Python interpreter resolver rather than the SDK's own independent one
+* add explicit servable-method selection to Chat and Benchmark
+* add a worker-backed runtime and Metal diagnostics report
+* add schema-validated, cancellable model profiling through the supported `veloxquant profile` CLI
+
+### Bug Fixes
+
+* replace the nonexistent control-panel `/api/profile` integration with the package's profile CLI
+* make chat and agent cancellation abort the active HTTP request without stopping the loaded model
+* prevent concurrent chat requests and ignore late chunks from cancelled requests
+* apply feature-specific Python package version requirements
+* update the hosted playground URL and stale method, hardware, and model-management documentation
 
 ## [0.5.0](https://github.com/rajveer43/veloxquant-vscode/compare/v0.4.3...v0.5.0) (2026-09-08)
 

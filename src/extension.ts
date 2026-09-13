@@ -6,11 +6,12 @@ import { PanelServerManager, reapOrphanedPanelProcess } from './server/panelServ
 import { DEFAULT_PANEL_PORT } from './server/panelApiClient';
 import { StatusBarManager } from './server/statusBarManager';
 import { LogTailManager } from './server/logTailManager';
-import { profileActiveSession } from './server/profileManager';
+import { profileModel } from './server/profileManager';
 import { resolveInterpreter, promptSelectInterpreter } from './python/interpreter';
 import { LocalModelsProvider, pullModelCommand, deleteModelCommand } from './views/localModelsProvider';
 import { ChatPlaygroundPanel } from './views/chatPlaygroundPanel';
 import { runBenchmarkCommand } from './server/benchmarkCommand';
+import { runDiagnosticsCommand } from './server/diagnosticsCommand';
 
 let serverManager: PanelServerManager | undefined;
 let statusBarManager: StatusBarManager | undefined;
@@ -99,9 +100,11 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(
     vscode.commands.registerCommand('veloxquant.profileActiveSession', async () => {
-      await profileActiveSession(() => serverManager);
+      await runProfileModel();
     })
   );
+  context.subscriptions.push(vscode.commands.registerCommand('veloxquant.profileModel', runProfileModel));
+  context.subscriptions.push(vscode.commands.registerCommand('veloxquant.runDiagnostics', runDiagnosticsCommand));
 
   const localModelsProvider = new LocalModelsProvider();
   context.subscriptions.push(vscode.window.registerTreeDataProvider(LocalModelsProvider.viewType, localModelsProvider));
@@ -145,6 +148,14 @@ export function activate(context: vscode.ExtensionContext): void {
       void handlePanelPortChanged();
     })
   );
+}
+
+async function runProfileModel(): Promise<void> {
+  await profileModel(async () => {
+    if (ChatPlaygroundPanel.hasLoadedModel()) return true;
+    const state = await serverManager?.getInferenceServerState();
+    return state === 'starting' || state === 'running';
+  });
 }
 
 /**

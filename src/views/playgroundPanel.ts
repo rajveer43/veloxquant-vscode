@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
-import { PanelServerManager, PanelModuleNotFoundError } from '../server/panelServerManager';
+import { PanelServerManager, PanelModuleNotFoundError, PanelVersionUnsupportedError } from '../server/panelServerManager';
 import { DEFAULT_PANEL_PORT, methodAvailabilityWarning } from '../server/panelApiClient';
 import { buildPipInstallCommand } from '../python/interpreter';
 
-const HOSTED_PLAYGROUND_URL = 'https://veloxquant-mlx.netlify.app/playground.html';
+const HOSTED_PLAYGROUND_URL = 'https://veloxquant.dev/playground.html';
 
 export class PlaygroundPanel {
   private static current: PlaygroundPanel | undefined;
@@ -89,6 +89,9 @@ export class PlaygroundPanel {
       case 'installPackage':
         await this.handleInstallPackage();
         break;
+      case 'upgradePackage':
+        await this.handleUpgradePackage();
+        break;
       default:
         break;
     }
@@ -112,6 +115,14 @@ export class PlaygroundPanel {
         }
       }
     });
+  }
+
+  private async handleUpgradePackage(): Promise<void> {
+    const manager = this.getServerManager();
+    if (!manager) return;
+    const terminal = vscode.window.createTerminal('Upgrade VeloxQuant-MLX');
+    terminal.show();
+    terminal.sendText(buildPipInstallCommand(manager.interpreterPathValue, true));
   }
 
   private post(message: unknown): void {
@@ -145,6 +156,10 @@ export class PlaygroundPanel {
           message: err.message,
           interpreterPath: err.interpreterPath,
         });
+        return;
+      }
+      if (err instanceof PanelVersionUnsupportedError) {
+        this.post({ type: 'upgrade-required', message: err.message });
         return;
       }
       this.post({

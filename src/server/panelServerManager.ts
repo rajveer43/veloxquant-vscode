@@ -20,6 +20,7 @@ import * as vscode from 'vscode';
 import { PanelApiClient, StatusResponse } from './panelApiClient';
 import { checkModuleImportable } from '../python/recommendClient';
 import { validateInterpreterPath } from '../python/interpreter';
+import { isVersionSupported, MIN_PANEL_VERSION, parseVersion } from '../python/versionCheck';
 
 export type PanelBackendState = 'unknown' | 'reachable-external' | 'spawning' | 'spawned' | 'unreachable';
 
@@ -88,6 +89,22 @@ export class PanelInterpreterInvalidError extends Error {
   }
 }
 
+export class PanelVersionUnsupportedError extends Error {
+  constructor(readonly installedVersion: string) {
+    super(`VeloxQuant-MLX ${installedVersion} is installed, but the Compression Lab needs ${MIN_PANEL_VERSION} or newer.`);
+    this.name = 'PanelVersionUnsupportedError';
+  }
+}
+
+function validatePanelVersion(version: string): void {
+  if (!parseVersion(version)) {
+    throw new Error(`The panel reported an invalid VeloxQuant-MLX version (${JSON.stringify(version)}).`);
+  }
+  if (!isVersionSupported(version, MIN_PANEL_VERSION)) {
+    throw new PanelVersionUnsupportedError(version);
+  }
+}
+
 export class PanelServerManager {
   private child: ChildProcess | undefined;
   private state: PanelBackendState = 'unknown';
@@ -145,6 +162,13 @@ export class PanelServerManager {
     const client = this.client;
 
     if (await client.isReachable()) {
+      const status = await client.getStatus();
+      try {
+        validatePanelVersion(status.version);
+      } catch (error) {
+        this.state = 'unreachable';
+        throw error;
+      }
       this.state = 'reachable-external';
       return;
     }
@@ -194,6 +218,13 @@ export class PanelServerManager {
     const start = Date.now();
     while (Date.now() - start < timeoutMs) {
       if (await client.isReachable()) {
+        const status = await client.getStatus();
+        try {
+          validatePanelVersion(status.version);
+        } catch (error) {
+          this.state = 'unreachable';
+          throw error;
+        }
         this.state = 'spawned';
         return;
       }

@@ -5,14 +5,10 @@ import { buildFullSnippet } from '../../src/insert/snippetBuilder';
 
 suite('VeloxQuant-MLX Extension Integration', () => {
   test('extension activates and is present', async () => {
-    const ext = vscode.extensions.getExtension('veloxquant.veloxquant-vscode');
-    // Packaging id depends on publisher; tolerate not-found in a bare test
-    // host that didn't install this as a real extension, but if present it
-    // must activate cleanly.
-    if (ext) {
-      await ext.activate();
-      assert.ok(ext.isActive);
-    }
+    const ext = vscode.extensions.getExtension('veloxquant-mlx.veloxquant-vscode');
+    assert.ok(ext, 'development extension should be installed in the integration host');
+    await ext.activate();
+    assert.ok(ext.isActive);
   });
 
   test('recommend command argv matches expected shape for a submit-like input', () => {
@@ -64,6 +60,8 @@ suite('VeloxQuant-MLX Extension Integration', () => {
       assert.ok(commands.includes('veloxquant.localModels.pull'));
       assert.ok(commands.includes('veloxquant.localModels.delete'));
       assert.ok(commands.includes('veloxquant.benchmarkModel'));
+      assert.ok(commands.includes('veloxquant.profileModel'));
+      assert.ok(commands.includes('veloxquant.runDiagnostics'));
     });
   });
 });

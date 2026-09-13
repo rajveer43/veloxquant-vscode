@@ -29,7 +29,7 @@ export interface MethodInfo {
   paper_deviation: string | null;
   is_adapted: boolean;
   unsupported_reason: string | null;
-  docs_url: string;
+  docs_url: string | null;
 }
 
 export interface MethodsResponse {
@@ -38,12 +38,30 @@ export interface MethodsResponse {
   methods: MethodInfo[];
 }
 
+function isFieldSchema(value: unknown): boolean {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const field = value as Record<string, unknown>;
+  return typeof field.name === 'string' && typeof field.type === 'string' && typeof field.optional === 'boolean' &&
+    (field.help === null || typeof field.help === 'string') && 'default' in field;
+}
+
+function isMethodInfo(value: unknown): value is MethodInfo {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const method = value as Record<string, unknown>;
+  return typeof method.name === 'string' && typeof method.family === 'string' && typeof method.serve_tier === 'string' &&
+    typeof method.serve_tier_label === 'string' && typeof method.is_servable === 'boolean' && typeof method.blurb === 'string' &&
+    Array.isArray(method.config_fields) && method.config_fields.every((field) => typeof field === 'string') &&
+    Array.isArray(method.field_schema) && method.field_schema.every(isFieldSchema) && typeof method.coverage === 'string' &&
+    typeof method.coverage_label === 'string' && (method.paper_deviation === null || typeof method.paper_deviation === 'string') &&
+    typeof method.is_adapted === 'boolean' && (method.unsupported_reason === null || typeof method.unsupported_reason === 'string') &&
+    (method.docs_url === null || typeof method.docs_url === 'string');
+}
+
 /** Reject broken discovery payloads rather than treating missing flags as unsupported methods. */
 export function parseMethodsResponse(value: unknown): MethodsResponse {
   const result = assertShape<MethodsResponse>(value, ['default_serve_method', 'accounting_only', 'methods'], '/api/methods');
   if (typeof result.default_serve_method !== 'string' || typeof result.accounting_only !== 'boolean' ||
-      !Array.isArray(result.methods) || result.methods.some((m) => !m || typeof m.name !== 'string' ||
-        typeof m.is_servable !== 'boolean' || (m.unsupported_reason != null && typeof m.unsupported_reason !== 'string'))) {
+      !Array.isArray(result.methods) || result.methods.some((method) => !isMethodInfo(method))) {
     throw new Error('Invalid method-discovery response from /api/methods. Check the backend package version.');
   }
   return result;
@@ -52,32 +70,37 @@ export function parseMethodsResponse(value: unknown): MethodsResponse {
 export function methodAvailabilityWarning(data: MethodsResponse): string | undefined {
   if (data.methods.some((method) => method.is_servable)) return undefined;
   const reasons = [...new Set(data.methods.map((method) => method.unsupported_reason).filter(Boolean))];
-  return `No serving methods are available. ${reasons.join('; ')} Check dependencies in the Python environment running the panel, then restart the panel backend to repeat its cached checks.`;
+  const detail = reasons.length > 0 ? `${reasons.join('; ')} ` : '';
+  return `No serving methods are available. ${detail}Check dependencies in the Python environment running the panel, then restart the panel backend to repeat its cached checks.`;
 }
 
 export interface StatusResponse {
   state: 'stopped' | 'starting' | 'running' | 'error';
   pid: number | null;
-  ready: boolean;
+  ready: Record<string, unknown> | null;
   error: string | null;
   config: Record<string, unknown>;
+  version?: string;
+}
+
+export interface VersionedStatusResponse extends StatusResponse {
   version: string;
 }
 
-export interface ProfileLayerRow {
-  layer: number;
-  quantize_ms: number | null;
-  dequantize_ms: number | null;
-  write_ms: number | null;
-  peak_memory_bytes: number | null;
-  compression_ratio: number | null;
-  tokens_per_sec: number | null;
+export interface ModelsResponse {
+  models: Array<{ repo_id: string; size_bytes: number; size_label: string; is_mlx: boolean }>;
 }
 
-export interface ProfileResponse {
-  method: string;
-  layers: ProfileLayerRow[];
-  table: string;
+export interface LogsResponse {
+  lines: Array<{ stream: string; text: string; ts: number }>;
+  total: number;
+}
+
+export interface MemoryResponse {
+  source: 'measured';
+  process: { rss_bytes: number | null; unavailable_reason: string | null };
+  mlx: { active_bytes: number | null; peak_bytes: number | null; unavailable_reason: string | null };
+  note: string;
 }
 
 const LOOPBACK_HOST = '127.0.0.1';
@@ -131,7 +154,7 @@ const STATUS_STATES = new Set(['stopped', 'starting', 'running', 'error']);
  * with an unrelated 2xx/JSON body (or an empty one, since `requestJson`
  * resolves `{}` for an empty response).
  */
-function isStatusResponse(value: unknown): value is StatusResponse {
+export function isStatusResponse(value: unknown, requireVersion = false): value is StatusResponse {
   if (typeof value !== 'object' || value === null) {
     return false;
   }
@@ -140,8 +163,12 @@ function isStatusResponse(value: unknown): value is StatusResponse {
     typeof v.state === 'string' &&
     STATUS_STATES.has(v.state) &&
     (v.pid === null || typeof v.pid === 'number') &&
+    (v.ready === null || (typeof v.ready === 'object' && !Array.isArray(v.ready))) &&
+    (v.error === null || typeof v.error === 'string') &&
     typeof v.config === 'object' &&
-    v.config !== null
+    v.config !== null &&
+    !Array.isArray(v.config) &&
+    (!requireVersion || typeof v.version === 'string')
   );
 }
 
@@ -171,12 +198,12 @@ function assertShape<T>(value: unknown, keys: string[], path: string): T {
 export class PanelApiClient {
   constructor(private readonly port: number) {}
 
-  async getStatus(timeoutMs = 1500): Promise<StatusResponse> {
+  async getStatus(timeoutMs = 1500): Promise<VersionedStatusResponse> {
     const status = await requestJson<StatusResponse>(this.port, '/api/status', { timeoutMs });
-    if (!isStatusResponse(status)) {
+    if (!isStatusResponse(status, true)) {
       throw new Error('Unexpected response from /api/status: does not look like a VeloxQuant-MLX panel.');
     }
-    return status;
+    return status as VersionedStatusResponse;
   }
 
   async isReachable(timeoutMs = 800): Promise<boolean> {
@@ -195,26 +222,37 @@ export class PanelApiClient {
     return parseMethodsResponse(result);
   }
 
-  async getModels(): Promise<{ models: unknown[] }> {
+  async getModels(): Promise<ModelsResponse> {
     const path = '/api/models';
-    const result = await requestJson<unknown>(this.port, path);
-    return assertShape<{ models: unknown[] }>(result, ['models'], path);
+    const result = assertShape<ModelsResponse>(await requestJson<unknown>(this.port, path), ['models'], path);
+    if (!Array.isArray(result.models) || result.models.some((model) => !model || typeof model.repo_id !== 'string' ||
+        typeof model.size_bytes !== 'number' || typeof model.size_label !== 'string' || typeof model.is_mlx !== 'boolean')) {
+      throw new Error(`Unexpected response from ${path}: invalid model list.`);
+    }
+    return result;
   }
 
-  async getMemory(): Promise<Record<string, unknown>> {
-    return requestJson(this.port, '/api/memory');
+  async getMemory(): Promise<MemoryResponse> {
+    const path = '/api/memory';
+    const result = assertShape<MemoryResponse>(await requestJson<unknown>(this.port, path), ['source', 'process', 'mlx', 'note'], path);
+    const nullableNumber = (value: unknown) => value === null || typeof value === 'number';
+    const nullableString = (value: unknown) => value === null || typeof value === 'string';
+    if (result.source !== 'measured' || typeof result.note !== 'string' || !result.process || !result.mlx ||
+        !nullableNumber(result.process.rss_bytes) || !nullableString(result.process.unavailable_reason) ||
+        !nullableNumber(result.mlx.active_bytes) || !nullableNumber(result.mlx.peak_bytes) || !nullableString(result.mlx.unavailable_reason)) {
+      throw new Error(`Unexpected response from ${path}: invalid memory report.`);
+    }
+    return result;
   }
 
-  async getLogs(since = 0): Promise<{ lines: unknown[]; total: number }> {
+  async getLogs(since = 0): Promise<LogsResponse> {
     const path = `/api/logs?since=${since}`;
-    const result = await requestJson<unknown>(this.port, path);
-    return assertShape<{ lines: unknown[]; total: number }>(result, ['lines', 'total'], path);
-  }
-
-  async getProfile(): Promise<ProfileResponse> {
-    const path = '/api/profile';
-    const result = await requestJson<unknown>(this.port, path, { timeoutMs: 10000 });
-    return assertShape<ProfileResponse>(result, ['method', 'layers'], path);
+    const result = assertShape<LogsResponse>(await requestJson<unknown>(this.port, path), ['lines', 'total'], path);
+    if (!Array.isArray(result.lines) || typeof result.total !== 'number' || result.lines.some((line) => !line ||
+        typeof line.stream !== 'string' || typeof line.text !== 'string' || typeof line.ts !== 'number')) {
+      throw new Error(`Unexpected response from ${path}: invalid log payload.`);
+    }
+    return result;
   }
 
   async start(config: Record<string, unknown>): Promise<StatusResponse> {

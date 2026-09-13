@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="media/social-banner.png" alt="VeloxQuant-MLX for VS Code — install and get up to 16x KV-cache reduction across 42 compression methods" width="100%" />
+  <img src="media/social-banner.png" alt="VeloxQuant-MLX for VS Code — install and get up to 16x KV-cache reduction across 43 compression methods" width="100%" />
 </p>
 
 # VeloxQuant-MLX for VS Code
@@ -12,7 +12,7 @@ Recommend a KV-cache compression method for your Mac and model, and run the
 — without leaving VS Code.
 
 [VeloxQuant-MLX](https://github.com/rajveer43/VeloxQuant-MLX) shrinks the KV
-cache of `mlx_lm` models on Apple Silicon, up to 16x, via 42 compression
+cache of `mlx_lm` models on Apple Silicon, up to 16x, via 43 compression
 methods behind one API. This extension is a thin client over the package's
 own `recommend` CLI and local control-plane server — it does not reimplement
 any compression logic.
@@ -83,10 +83,10 @@ process's own logs.
 Command **VeloxQuant-MLX: Open Chat Playground**. A second editor-area panel,
 alongside the Compression Lab, that loads a local model through
 `@veloxquant/sdk` directly (not the CLI) and lets you chat with it, streaming
-tokens live. Pick a downloaded model from the dropdown (populated from the
-**Local Models** view below), send a message, and stop generation mid-stream
-without killing the loaded model. Closing the panel stops the underlying
-model process.
+tokens live. Pick a downloaded model or type a Hugging Face model id, choose
+automatic method selection or an explicit serving-compatible method, send a
+message, and stop generation mid-stream without killing the loaded model.
+Closing the panel stops the underlying model process.
 
 An **Agent mode** toggle switches the same chat surface to use the SDK's
 tool-calling `Agent`, with two read-only, editor-native example tools:
@@ -115,7 +115,8 @@ freed weights aren't recoverable without re-downloading.
 Command **VeloxQuant-MLX: Benchmark Model**. Runs the SDK's `benchmark()`
 against a model you pick (from your local cache, or a free-text id),
 comparing tokens/sec, time-to-first-token, and measured resident memory
-(RSS) between the default method and an optimized one. This takes minutes —
+(RSS) between the default method and an automatic or explicitly selected
+optimized method. This takes minutes —
 it loads the model twice — and reports progress via a notification and the
 **VeloxQuant-MLX Benchmark** output channel. Results open as an untitled
 Markdown document, including the same accounting-only caveat line the SDK
@@ -123,18 +124,34 @@ itself produces when optimized RSS measures higher than the default (yes,
 that can happen — compression byte-count savings and measured resident
 memory are not the same thing).
 
+### Profile Model
+
+Command **VeloxQuant-MLX: Profile Model** runs the package's supported
+`veloxquant profile` CLI against a model and servable method. It renders the
+schema-versioned per-layer latency, byte counters, accounting compression
+ratio, and throughput report as Markdown. Profiling loads its own model, so
+the extension requires Compression Lab and Chat models to be stopped first.
+
+### Diagnostics
+
+Command **VeloxQuant-MLX: Run Diagnostics** starts the package's short-lived
+worker protocol, reports Python/VeloxQuant/MLX/device versions and supported
+operations, and executes a small Metal probe. The worker is always stopped
+when the report finishes or fails.
+
 ## Requirements
 
-- macOS on Apple Silicon (M1–M4) to actually run compression — the
+- macOS on Apple Silicon (M1–M5) to actually run compression — the
   extension activates cross-platform (e.g. over Remote-SSH into a Mac) but
   will show an upfront notice rather than pretend the library works
   elsewhere.
 - Python with `VeloxQuant-MLX` installed, resolved via the
   [Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
   or `veloxquant.pythonPath`.
-- **VeloxQuant-MLX 0.42.0 or newer** — this is the minimum version that
-  supports `recommend --json`. Older installs get a distinct "please
-  upgrade" message rather than a generic failure.
+- VeloxQuant-MLX requirements are checked per feature: **0.42.0** for
+  Recommend, **0.46.0** for the panel/serve paths, **0.68.0** for profiling,
+  and **0.81.0** for worker diagnostics. **0.83.0 or newer is recommended**
+  for current cache, live-memory, and dynamic-field fixes.
 
 The Chat Playground, Local Models, and Benchmark Model features additionally
 depend on [`@veloxquant/sdk`](https://www.npmjs.com/package/@veloxquant/sdk)
@@ -165,7 +182,8 @@ VeloxQuant-MLX" button when it detects the package is missing.)
   custom language server.
 - No bundling of the `VeloxQuant-MLX` Python package inside the extension —
   this is a thin client over a user-managed Python environment.
-- No model download manager.
+- Hub search remains inside the package-owned Compression Lab; the extension's
+  Local Models view supports explicit pull/delete operations by model id.
 - No account system, no non-standard telemetry (VS Code's own opt-in/opt-out
   telemetry API only).
 - No Windows/Linux feature parity claims — the extension can activate
