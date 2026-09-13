@@ -16,8 +16,11 @@ type ModelState = 'idle' | 'loading' | 'ready' | 'error';
 
 let modelState: ModelState = 'idle';
 let currentModel = '';
+let currentMethod = '';
 let agentMode = false;
 let currentAssistantEl: HTMLDivElement | undefined;
+let activeRequestId: string | undefined;
+let generating = false;
 
 function escapeHtml(s: string): string {
   const div = document.createElement('div');
@@ -36,13 +39,16 @@ function render(): void {
   if (initialRenderDone) {
     const status = document.getElementById('status');
     if (status) status.textContent = statusText();
+    updateControls();
     return;
   }
   initialRenderDone = true;
 
   root.innerHTML = `
     <div class="toolbar">
-      <select id="model-select"><option value="">Select a local model…</option></select>
+      <input id="model-input" list="model-list" placeholder="Local or Hugging Face model id…" />
+      <datalist id="model-list"></datalist>
+      <select id="method-select"><option value="">Automatic method</option></select>
       <button id="load-btn" type="button">Load</button>
       <label class="agent-toggle"><input type="checkbox" id="agent-toggle" ${agentMode ? 'checked' : ''} /> Agent mode</label>
       <span id="status" class="status">${escapeHtml(statusText())}</span>
@@ -56,9 +62,15 @@ function render(): void {
   `;
 
   document.getElementById('load-btn')?.addEventListener('click', () => {
-    const select = document.getElementById('model-select') as HTMLSelectElement;
-    if (select.value) {
-      vscode.postMessage({ type: 'loadModel', model: select.value });
+    const input = document.getElementById('model-input') as HTMLInputElement;
+    const method = (document.getElementById('method-select') as HTMLSelectElement).value;
+    const model = input.value.trim();
+    if (model) {
+      currentModel = model;
+      currentMethod = '';
+      modelState = 'loading';
+      render();
+      vscode.postMessage({ type: 'loadModel', model, method: method || undefined });
     }
   });
 
@@ -69,15 +81,30 @@ function render(): void {
 
   document.getElementById('send-btn')?.addEventListener('click', sendPrompt);
   document.getElementById('stop-btn')?.addEventListener('click', () => {
-    vscode.postMessage({ type: 'stopGeneration' });
+    if (activeRequestId) vscode.postMessage({ type: 'stopGeneration', requestId: activeRequestId });
   });
+  updateControls();
 }
 
 function statusText(): string {
+  if (generating) return `Generating with ${currentModel}…`;
   if (modelState === 'idle') return 'No model loaded.';
   if (modelState === 'loading') return `Loading ${currentModel}…`;
-  if (modelState === 'ready') return `Ready: ${currentModel}`;
+  if (modelState === 'ready') return `Ready: ${currentModel}${currentMethod ? ` · ${currentMethod}` : ''}`;
   return `Error loading ${currentModel}`;
+}
+
+function updateControls(): void {
+  const busy = generating || modelState === 'loading';
+  const disabledWhileGenerating = ['model-input', 'method-select', 'load-btn', 'agent-toggle'];
+  for (const id of disabledWhileGenerating) {
+    const control = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | HTMLButtonElement | null;
+    if (control) control.disabled = busy;
+  }
+  const send = document.getElementById('send-btn') as HTMLButtonElement | null;
+  if (send) send.disabled = generating || modelState !== 'ready';
+  const stop = document.getElementById('stop-btn') as HTMLButtonElement | null;
+  if (stop) stop.disabled = !generating;
 }
 
 function sendPrompt(): void {
@@ -88,7 +115,11 @@ function sendPrompt(): void {
   appendMessage('user', text);
   input.value = '';
   currentAssistantEl = appendMessage('assistant', '');
-  vscode.postMessage({ type: 'send', prompt: text });
+  const requestId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  activeRequestId = requestId;
+  generating = true;
+  render();
+  vscode.postMessage({ type: 'send', requestId, prompt: text });
 }
 
 function appendMessage(role: 'user' | 'assistant' | 'tool', text: string): HTMLDivElement {
@@ -119,30 +150,57 @@ window.addEventListener('message', (event: MessageEvent<{ type: string; [key: st
   const message = event.data;
   switch (message.type) {
     case 'models': {
-      const select = document.getElementById('model-select') as HTMLSelectElement | null;
-      if (select) {
+      const list = document.getElementById('model-list') as HTMLDataListElement | null;
+      if (list) {
         const models = message.models as string[];
-        select.innerHTML =
-          '<option value="">Select a local model…</option>' +
-          models.map((m) => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+        list.innerHTML = models.map((m) => `<option value="${escapeHtml(m)}"></option>`).join('');
+      }
+      break;
+    }
+    case 'methods': {
+      const select = document.getElementById('method-select') as HTMLSelectElement | null;
+      if (select) {
+        const methods = message.methods as Array<{ name: string; family: string; blurb: string }>;
+        select.innerHTML = '<option value="">Automatic method</option>' + methods.map((method) =>
+          `<option value="${escapeHtml(method.name)}" title="${escapeHtml(method.blurb)}">${escapeHtml(method.name)} · ${escapeHtml(method.family)}</option>`
+        ).join('');
       }
       break;
     }
     case 'modelState':
       modelState = message.state as ModelState;
       currentModel = (message.model as string) ?? currentModel;
+      currentMethod = (message.method as string) ?? currentMethod;
       if (modelState === 'error') {
         appendMessage('tool', `Error: ${message.message as string}`);
       }
       render();
       break;
+    case 'generationStarted':
+      if (message.requestId === activeRequestId) {
+        generating = true;
+        render();
+      }
+      break;
     case 'assistantChunk':
-      if (currentAssistantEl) {
+      if (message.requestId === activeRequestId && currentAssistantEl) {
         currentAssistantEl.textContent += message.text as string;
       }
       break;
     case 'agentStep':
-      appendAgentStep(message.toolName as string, message.args, message.result);
+      if (message.requestId === activeRequestId) {
+        appendAgentStep(message.toolName as string, message.args, message.result);
+      }
+      break;
+    case 'generationFinished':
+      if (message.requestId === activeRequestId) {
+        generating = false;
+        if (message.outcome === 'cancelled') appendMessage('tool', 'Generation cancelled.');
+        if (message.outcome === 'failed') appendMessage('tool', `Error: ${message.message as string}`);
+        activeRequestId = undefined;
+        currentAssistantEl = undefined;
+        render();
+      }
       break;
     case 'error':
       appendMessage('tool', `Error: ${message.message as string}`);

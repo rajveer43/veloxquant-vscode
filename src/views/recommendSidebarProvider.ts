@@ -218,7 +218,7 @@ ${body}
         return undefined;
       }
       const methods = await client.getMethods();
-      return methods.methods.find((m) => m.name === method)?.docs_url;
+      return methods.methods.find((m) => m.name === method)?.docs_url ?? undefined;
     } catch {
       return undefined;
     }

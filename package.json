@@ -43,7 +43,9 @@
     "onView:veloxquant.localModels",
     "onCommand:veloxquant.openPlaygroundEditor",
     "onCommand:veloxquant.openChatPlayground",
-    "onCommand:veloxquant.benchmarkModel"
+    "onCommand:veloxquant.benchmarkModel",
+    "onCommand:veloxquant.profileModel",
+    "onCommand:veloxquant.runDiagnostics"
   ],
   "contributes": {
     "viewsContainers": {
@@ -102,7 +104,18 @@
       },
       {
         "command": "veloxquant.profileActiveSession",
-        "title": "VeloxQuant-MLX: Profile Active Session",
+        "title": "VeloxQuant-MLX: Profile Model (Legacy Alias)",
+        "category": "VeloxQuant-MLX",
+        "enablement": "false"
+      },
+      {
+        "command": "veloxquant.profileModel",
+        "title": "VeloxQuant-MLX: Profile Model",
+        "category": "VeloxQuant-MLX"
+      },
+      {
+        "command": "veloxquant.runDiagnostics",
+        "title": "VeloxQuant-MLX: Run Diagnostics",
         "category": "VeloxQuant-MLX"
       },
       {
@@ -190,7 +203,7 @@
     "package": "vsce package --no-dependencies"
   },
   "dependencies": {
-    "@veloxquant/sdk": "^0.6.0"
+    "@veloxquant/sdk": "^0.7.1"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
