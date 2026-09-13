@@ -16,6 +16,14 @@
 * apply feature-specific Python package version requirements
 * update the hosted playground URL and stale method, hardware, and model-management documentation
 
+## [0.5.2](https://github.com/rajveer43/veloxquant-vscode/compare/v0.5.1...v0.5.2) (2026-09-13)
+
+
+### Bug Fixes
+
+* **playground:** method discovery, cancellation, and profile CLI integration ([dc9985d](https://github.com/rajveer43/veloxquant-vscode/commit/dc9985de8c7643c34c81914f140eb5174c10af3c))
+* **playground:** method discovery, cancellation, and profile CLI integration ([db8c6a0](https://github.com/rajveer43/veloxquant-vscode/commit/db8c6a011494f6d7415f992467f379b5a3618b7b))
+
 ## [0.5.1](https://github.com/rajveer43/veloxquant-vscode/compare/v0.5.0...v0.5.1) (2026-09-08)
 
 
