@@ -292,7 +292,6 @@ interface RawFormValues {
   nLayers?: number;
   nKvHeads?: number;
   headDim?: number;
-  batchSize?: number;
 }
 
 function toRequestInput(raw: RawFormValues): RecommendRequestInput {
@@ -305,6 +304,5 @@ function toRequestInput(raw: RawFormValues): RecommendRequestInput {
     nLayers: raw.nLayers,
     nKvHeads: raw.nKvHeads,
     headDim: raw.headDim,
-    batchSize: raw.batchSize,
   };
 }

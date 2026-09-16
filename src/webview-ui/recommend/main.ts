@@ -23,7 +23,6 @@ interface RecommendFormValues {
   nLayers?: number;
   nKvHeads?: number;
   headDim?: number;
-  batchSize?: number;
 }
 
 const form = document.getElementById('recommend-form') as HTMLFormElement;
@@ -61,7 +60,6 @@ function readForm(): RecommendFormValues {
     nLayers: optionalInt('n-layers'),
     nKvHeads: optionalInt('n-kv-heads'),
     headDim: optionalInt('head-dim'),
-    batchSize: optionalInt('batch-size'),
   };
 }
 

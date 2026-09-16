@@ -21,7 +21,6 @@ export interface RecommendRequestInput {
   nLayers?: number;
   nKvHeads?: number;
   headDim?: number;
-  batchSize?: number;
 }
 
 export interface RecommendRequest {
@@ -33,7 +32,6 @@ export interface RecommendRequest {
   n_layers: number;
   n_kv_heads: number;
   head_dim: number;
-  batch_size: number;
 }
 
 export interface Recommendation {
@@ -112,9 +110,6 @@ export function buildRecommendArgv(input: RecommendRequestInput): string[] {
   }
   if (input.headDim !== undefined) {
     argv.push('--head-dim', String(input.headDim));
-  }
-  if (input.batchSize !== undefined) {
-    argv.push('--batch-size', String(input.batchSize));
   }
   argv.push('--json');
   return argv;
