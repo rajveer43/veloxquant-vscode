@@ -184,6 +184,15 @@ function renderError(payload: { kind: string; message: string; stderr?: string; 
         </div>
       `;
       break;
+    case 'invalid-choice':
+      body = `
+        <p><strong>This configuration isn't supported by your installed VeloxQuant-MLX.</strong> Try a different chip or RAM size — upgrading will not fix this.</p>
+        <details>
+          <summary>Details</summary>
+          <pre>${escapeHtml(payload.stderr ?? '')}</pre>
+        </details>
+      `;
+      break;
     case 'non-darwin':
       body = `<p>VeloxQuant-MLX targets Apple Silicon Macs. This sidebar remains available, but CLI calls will not work on this host.</p>`;
       break;

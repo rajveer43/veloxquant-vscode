@@ -193,6 +193,8 @@ ${body}
           this.post({ type: 'error', kind: 'module-not-found', message: err.message, interpreterPath, stderr: err.stderr });
         } else if (err.kind === 'unsupported-flag') {
           this.post({ type: 'error', kind: 'unsupported-flag', message: err.message, stderr: err.stderr });
+        } else if (err.kind === 'invalid-choice') {
+          this.post({ type: 'error', kind: 'invalid-choice', message: err.message, stderr: err.stderr });
         } else {
           // Preflight to distinguish "not importable" from a generic failure
           // when the primary regex match didn't catch it.
