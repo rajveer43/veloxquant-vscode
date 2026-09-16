@@ -6,6 +6,7 @@ import {
   isVersionSupported,
   MIN_SUPPORTED_VERSION,
   parseVersion,
+  RECOMMENDED_VERSION,
 } from '../../src/python/versionCheck';
 
 test('MIN_SUPPORTED_VERSION is 0.42.0', () => {
@@ -29,6 +30,14 @@ test('isVersionSupported: older than minimum is not supported', () => {
 
 test('isVersionSupported: unparsable version fails open (treated as supported)', () => {
   assert.equal(isVersionSupported('not-a-version'), true);
+});
+
+test('isVersionSupported against RECOMMENDED_VERSION: used to tell "already up to date" apart from "actually too old" when a CLI flag/value is rejected', () => {
+  // An install already at or above RECOMMENDED_VERSION cannot be fixed by
+  // upgrading, so a rejected flag/value there must not be blamed on version age.
+  assert.equal(isVersionSupported('0.83.19', RECOMMENDED_VERSION), true);
+  assert.equal(isVersionSupported(RECOMMENDED_VERSION, RECOMMENDED_VERSION), true);
+  assert.equal(isVersionSupported('0.60.0', RECOMMENDED_VERSION), false);
 });
 
 test('feature minimums reflect the first upstream contracts', () => {
