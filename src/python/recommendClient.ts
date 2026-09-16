@@ -55,6 +55,7 @@ export interface RecommendResponse {
 export type RecommendErrorKind =
   | 'module-not-found'
   | 'unsupported-flag' // pre-0.42.0 package: --json/recommend not recognized
+  | 'invalid-choice' // a value this extension sent (e.g. --chip M5) is rejected by the installed CLI's argparse
   | 'non-zero-exit'
   | 'spawn-failed';
 
@@ -70,6 +71,20 @@ export class RecommendError extends Error {
     this.stderr = stderr;
     this.command = command;
   }
+}
+
+/**
+ * Detects argparse's `argument --flag: invalid choice: 'value' (choose from ...)`
+ * for a flag/value pair this extension actually sent. Distinguishes "the installed
+ * CLI doesn't recognize this specific value" (upgrading won't necessarily help,
+ * and may not even be possible yet) from a genuinely too-old install that lacks
+ * `recommend --json` entirely.
+ */
+export function matchInvalidChoice(stderr: string, flag: string, value: string): boolean {
+  const escapedFlag = flag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const escapedValue = value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pattern = new RegExp(`argument ${escapedFlag}: invalid choice: '${escapedValue}'`);
+  return pattern.test(stderr);
 }
 
 export function buildRecommendArgv(input: RecommendRequestInput): string[] {
@@ -164,6 +179,14 @@ export async function getRecommendation(
         interpreterPath,
         ...argv,
       ]);
+    }
+    if (matchInvalidChoice(stderr, '--chip', input.chip) || matchInvalidChoice(stderr, '--ram-gb', String(input.ramGb))) {
+      throw new RecommendError(
+        'invalid-choice',
+        `The installed VeloxQuant-MLX version does not support this configuration.`,
+        stderr,
+        [interpreterPath, ...argv]
+      );
     }
     if (/unrecognized arguments|invalid choice|no such option|argument --json/i.test(stderr)) {
       throw new RecommendError(

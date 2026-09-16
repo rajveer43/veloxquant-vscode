@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildRecommendArgv, formatCommandForDisplay } from '../../src/python/recommendClient';
+import { buildRecommendArgv, formatCommandForDisplay, matchInvalidChoice } from '../../src/python/recommendClient';
 
 test('buildRecommendArgv: required fields only, no advanced flags when blank', () => {
   const argv = buildRecommendArgv({
@@ -73,4 +73,25 @@ test('formatCommandForDisplay: quotes interpreter path with spaces', () => {
 test('formatCommandForDisplay: no quoting when no spaces present', () => {
   const cmd = formatCommandForDisplay('/usr/bin/python3', ['-m', 'veloxquant_mlx', '--json']);
   assert.equal(cmd, '/usr/bin/python3 -m veloxquant_mlx --json');
+});
+
+test('matchInvalidChoice: detects an unsupported --chip value from real argparse stderr', () => {
+  const stderr =
+    'usage: veloxquant recommend [-h] --chip {M1,M2,M3,M4} ...\n' +
+    "veloxquant recommend: error: argument --chip: invalid choice: 'M5' (choose from 'M1', 'M2', 'M3', 'M4')\n";
+  assert.ok(matchInvalidChoice(stderr, '--chip', 'M5'));
+  assert.ok(!matchInvalidChoice(stderr, '--chip', 'M4'));
+  assert.ok(!matchInvalidChoice(stderr, '--ram-gb', '96'));
+});
+
+test('matchInvalidChoice: detects an unsupported --ram-gb value from real argparse stderr', () => {
+  const stderr =
+    "veloxquant recommend: error: argument --ram-gb: invalid choice: '96' (choose from 8, 16, 24, 32, 36, 48, 64, 128)\n";
+  assert.ok(matchInvalidChoice(stderr, '--ram-gb', '96'));
+  assert.ok(!matchInvalidChoice(stderr, '--ram-gb', '128'));
+});
+
+test('matchInvalidChoice: does not false-positive on unrelated stderr', () => {
+  const stderr = 'ModuleNotFoundError: No module named veloxquant_mlx\n';
+  assert.ok(!matchInvalidChoice(stderr, '--chip', 'M5'));
 });
