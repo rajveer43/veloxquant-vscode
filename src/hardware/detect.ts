@@ -11,10 +11,10 @@ const KNOWN_CHIPS: readonly DetectedChip[] = ['M1', 'M2', 'M3', 'M4', 'M5'];
 
 export interface DetectedHardware {
   chip: DetectedChip | undefined;
-  ramGb: 8 | 16 | 24 | 32 | 36 | 48 | 64 | 96 | 128 | 192 | 256 | 512 | undefined;
+  ramGb: 8 | 16 | 24 | 32 | 36 | 48 | 64 | 96 | 128 | 192 | 512 | undefined;
 }
 
-const RAM_STEPS: DetectedHardware['ramGb'][] = [8, 16, 24, 32, 36, 48, 64, 96, 128, 192, 256, 512];
+const RAM_STEPS: DetectedHardware['ramGb'][] = [8, 16, 24, 32, 36, 48, 64, 96, 128, 192, 512];
 
 function nearestRamStep(bytes: number): DetectedHardware['ramGb'] {
   const gb = bytes / 1024 / 1024 / 1024;

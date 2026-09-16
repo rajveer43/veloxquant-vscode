@@ -77,6 +77,18 @@ test('detectHardware: snaps 512GB Mac Studio RAM correctly instead of clamping t
   assert.equal(hw.ramGb, 512);
 });
 
+test('detectHardware: 256GB RAM snaps to the 192 step, not a nonexistent 256 step', async () => {
+  const hw = await withPlatform('darwin', () =>
+    detectHardware(
+      fakeSysctl({
+        'machdep.cpu.brand_string': 'Apple M2 Ultra',
+        'hw.memsize': String(256 * 1024 * 1024 * 1024),
+      })
+    )
+  );
+  assert.equal(hw.ramGb, 192);
+});
+
 test('detectHardware: non-darwin platform returns undefined without invoking sysctl', async () => {
   const hw = await withPlatform('win32', () =>
     detectHardware(async () => {
