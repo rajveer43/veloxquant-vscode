@@ -16,6 +16,20 @@
 * apply feature-specific Python package version requirements
 * update the hosted playground URL and stale method, hardware, and model-management documentation
 
+## [0.5.3](https://github.com/rajveer43/veloxquant-vscode/compare/v0.5.2...v0.5.3) (2026-09-16)
+
+
+### Bug Fixes
+
+* **recommend:** don't show Upgrade CTA when the install is already current ([95d6bc5](https://github.com/rajveer43/veloxquant-vscode/commit/95d6bc576f3db5068947acbb25c82933814cb07f))
+* **recommend:** don't show Upgrade CTA when the install is already current ([b51046f](https://github.com/rajveer43/veloxquant-vscode/commit/b51046f0496b460c7f971086cd8a197df0e95a7c)), closes [#27](https://github.com/rajveer43/veloxquant-vscode/issues/27)
+* **recommend:** drop the invalid 256GB RAM tier from the selector ([aaa88d7](https://github.com/rajveer43/veloxquant-vscode/commit/aaa88d75528c453087f6dcb1b09f05a9ea155634))
+* **recommend:** drop the invalid 256GB RAM tier from the selector ([52316f8](https://github.com/rajveer43/veloxquant-vscode/commit/52316f85f64cb08fce4cc28b964d97568c9a95b7)), closes [#25](https://github.com/rajveer43/veloxquant-vscode/issues/25)
+* **recommend:** remove dead Batch size field with no CLI backing ([cf1acdf](https://github.com/rajveer43/veloxquant-vscode/commit/cf1acdfb3b4796823d617fbb02c3c5427094ae96))
+* **recommend:** remove dead Batch size field with no CLI backing ([bb9fb6c](https://github.com/rajveer43/veloxquant-vscode/commit/bb9fb6ca462a0a290164c9bb865fb0567ab5d90d)), closes [#26](https://github.com/rajveer43/veloxquant-vscode/issues/26)
+* **recommend:** stop misreporting M5/RAM-tier rejections as "package too old" ([bd52167](https://github.com/rajveer43/veloxquant-vscode/commit/bd5216726a436e0ce469c9d315340d449792af84))
+* **recommend:** stop misreporting M5/RAM-tier rejections as "package too old" ([f87fe67](https://github.com/rajveer43/veloxquant-vscode/commit/f87fe67a65c5519b36c598e0ed390c7d11ecbe98)), closes [#24](https://github.com/rajveer43/veloxquant-vscode/issues/24)
+
 ## [0.5.2](https://github.com/rajveer43/veloxquant-vscode/compare/v0.5.1...v0.5.2) (2026-09-13)
 
 
