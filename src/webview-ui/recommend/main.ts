@@ -191,6 +191,18 @@ function renderError(payload: { kind: string; message: string; stderr?: string; 
         </details>
       `;
       break;
+    case 'flag-not-supported':
+      body = `
+        <p><strong>This request isn't supported by your installed VeloxQuant-MLX</strong> — it's already up to date, so upgrading will not fix this.</p>
+        <details>
+          <summary>Details</summary>
+          <pre>${escapeHtml(payload.stderr ?? '')}</pre>
+        </details>
+        <div class="actions">
+          <button id="report-issue-btn" type="button" class="secondary">Report an issue</button>
+        </div>
+      `;
+      break;
     case 'non-darwin':
       body = `<p>VeloxQuant-MLX targets Apple Silicon Macs. This sidebar remains available, but CLI calls will not work on this host.</p>`;
       break;

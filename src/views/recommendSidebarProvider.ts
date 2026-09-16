@@ -1,3 +1,4 @@
+import { execFile } from 'node:child_process';
 import * as vscode from 'vscode';
 import { promptSelectInterpreter, resolveInterpreter, buildPipInstallCommand } from '../python/interpreter';
 import {
@@ -8,6 +9,7 @@ import {
   getRecommendation,
   buildRecommendArgv,
 } from '../python/recommendClient';
+import { getInstalledVersion, isVersionSupported, RECOMMENDED_VERSION } from '../python/versionCheck';
 import { buildFullSnippet } from '../insert/snippetBuilder';
 import { insertSnippet, pickInsertTarget } from '../insert/targetPicker';
 import { inferModelShapeFromActiveEditor } from '../insert/modelInference';
@@ -15,6 +17,18 @@ import { detectHardware } from '../hardware/detect';
 import { PanelApiClient, DEFAULT_PANEL_PORT } from '../server/panelApiClient';
 
 const ISSUE_TEMPLATE_URL = 'https://github.com/rajveer43/veloxquant-vscode/issues/new';
+
+function execFileAsync(file: string, args: string[]): Promise<{ stdout: string; code: number }> {
+  return new Promise((resolve, reject) => {
+    execFile(file, args, (err, stdout) => {
+      if (err && typeof (err as NodeJS.ErrnoException).code === 'string') {
+        reject(err);
+        return;
+      }
+      resolve({ stdout, code: err ? ((err as { code?: number }).code ?? 1) : 0 });
+    });
+  });
+}
 
 export class RecommendSidebarProvider implements vscode.WebviewViewProvider {
   static readonly viewType = 'veloxquant.recommendSidebar';
@@ -192,7 +206,18 @@ ${body}
         if (err.kind === 'module-not-found') {
           this.post({ type: 'error', kind: 'module-not-found', message: err.message, interpreterPath, stderr: err.stderr });
         } else if (err.kind === 'unsupported-flag') {
-          this.post({ type: 'error', kind: 'unsupported-flag', message: err.message, stderr: err.stderr });
+          // The regex that classified this as "unsupported-flag" also matches
+          // argparse rejecting a value/flag on an up-to-date install (any
+          // future case not covered by 'invalid-choice' above). Check the
+          // actual installed version before blaming it on being too old —
+          // upgrading cannot fix a rejection on an install already at or
+          // above the version we recommend.
+          const installedVersion = await getInstalledVersion(interpreterPath, execFileAsync);
+          if (installedVersion && isVersionSupported(installedVersion, RECOMMENDED_VERSION)) {
+            this.post({ type: 'error', kind: 'flag-not-supported', message: err.message, stderr: err.stderr });
+          } else {
+            this.post({ type: 'error', kind: 'unsupported-flag', message: err.message, stderr: err.stderr });
+          }
         } else if (err.kind === 'invalid-choice') {
           this.post({ type: 'error', kind: 'invalid-choice', message: err.message, stderr: err.stderr });
         } else {
