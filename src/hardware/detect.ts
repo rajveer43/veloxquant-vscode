@@ -4,13 +4,16 @@
  * failure or non-Darwin platform resolves to an empty result.
  */
 import { execFile } from 'node:child_process';
+import { mapChipName } from './chips';
+import type { RecommendChip } from './chips';
+import { parseProfileHardware } from './profileHardware';
 
-export type DetectedChip = 'M1' | 'M2' | 'M3' | 'M4' | 'M5';
-
-const KNOWN_CHIPS: readonly DetectedChip[] = ['M1', 'M2', 'M3', 'M4', 'M5'];
+export type DetectedChip = RecommendChip;
 
 export interface DetectedHardware {
   chip: DetectedChip | undefined;
+  /** Visible note when the detected chip was mapped to the nearest one the recommender accepts. */
+  chipNote?: string;
   ramGb: 8 | 16 | 24 | 32 | 36 | 48 | 64 | 96 | 128 | 192 | 512 | undefined;
 }
 
@@ -42,25 +45,40 @@ function defaultSysctl(key: string): Promise<string | undefined> {
   });
 }
 
-/** `sysctl` is injectable so tests can simulate hardware without shelling out. */
+/**
+ * `sysctl` and `profile` are injectable so tests can simulate hardware without
+ * shelling out. `profile` returns the stdout of `veloxquant profile-hardware
+ * --json` (or undefined when unavailable, e.g. package < 0.91.0); it is
+ * preferred when it yields usable data, and sysctl is the fallback.
+ */
 export async function detectHardware(
-  sysctl: (key: string) => Promise<string | undefined> = defaultSysctl
+  sysctl: (key: string) => Promise<string | undefined> = defaultSysctl,
+  profile?: () => Promise<string | undefined>
 ): Promise<DetectedHardware> {
   if (process.platform !== 'darwin') {
     return { chip: undefined, ramGb: undefined };
   }
 
+  if (profile) {
+    try {
+      const stdout = await profile();
+      const parsed = stdout ? parseProfileHardware(stdout) : undefined;
+      if (parsed && (parsed.chip || parsed.totalMemoryBytes !== undefined)) {
+        return {
+          chip: parsed.chip?.chip,
+          chipNote: parsed.chip?.note,
+          ramGb: parsed.totalMemoryBytes !== undefined ? nearestRamStep(parsed.totalMemoryBytes) : undefined,
+        };
+      }
+    } catch {
+      // fall through to sysctl
+    }
+  }
+
   try {
     const [brand, memsize] = await Promise.all([sysctl('machdep.cpu.brand_string'), sysctl('hw.memsize')]);
 
-    let chip: DetectedHardware['chip'];
-    if (brand) {
-      const match = /Apple (M\d+)/.exec(brand);
-      const candidate = match?.[1];
-      if (candidate && (KNOWN_CHIPS as readonly string[]).includes(candidate)) {
-        chip = candidate as DetectedChip;
-      }
-    }
+    const mapped = brand && /Apple/.test(brand) ? mapChipName(brand) : undefined;
 
     let ramGb: DetectedHardware['ramGb'];
     if (memsize) {
@@ -70,7 +88,7 @@ export async function detectHardware(
       }
     }
 
-    return { chip, ramGb };
+    return { chip: mapped?.chip, chipNote: mapped?.note, ramGb };
   } catch {
     return { chip: undefined, ramGb: undefined };
   }

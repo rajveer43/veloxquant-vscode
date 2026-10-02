@@ -9,7 +9,17 @@ import {
   getRecommendation,
   buildRecommendArgv,
 } from '../python/recommendClient';
-import { getInstalledVersion, isVersionSupported, RECOMMENDED_VERSION } from '../python/versionCheck';
+import {
+  FEATURE_MINIMUMS,
+  getInstalledVersion,
+  isVersionSupported,
+  RECOMMENDED_VERSION,
+} from '../python/versionCheck';
+import type { PackageFeature } from '../python/versionCheck';
+import { AutoRecommendError, getAutoRecommendation } from '../python/autoRecommendClient';
+import type { AutoObjective } from '../python/autoRecommendClient';
+import { EstimateMemoryError, getMemoryEstimate } from '../python/estimateMemoryClient';
+import { PROFILE_HARDWARE_ARGV } from '../hardware/profileHardware';
 import { buildFullSnippet } from '../insert/snippetBuilder';
 import { insertSnippet, pickInsertTarget } from '../insert/targetPicker';
 import { inferModelShapeFromActiveEditor } from '../insert/modelInference';
@@ -35,6 +45,7 @@ export class RecommendSidebarProvider implements vscode.WebviewViewProvider {
 
   private view: vscode.WebviewView | undefined;
   private lastCommand: { interpreterPath: string; argv: string[] } | undefined;
+  private autoAbort: AbortController | undefined;
 
   constructor(private readonly extensionUri: vscode.Uri) {}
 
@@ -128,6 +139,18 @@ ${body}
       case 'infer':
         this.handleInfer();
         break;
+      case 'pickConfig':
+        await this.handlePickConfig();
+        break;
+      case 'submitAuto':
+        await this.handleSubmitAuto(message.values as RawAutoValues);
+        break;
+      case 'cancelAuto':
+        this.autoAbort?.abort();
+        break;
+      case 'estimateMemory':
+        await this.handleEstimateMemory(message.values as RawAutoValues);
+        break;
       case 'open':
         void vscode.commands.executeCommand('veloxquant.openPlaygroundEditor');
         break;
@@ -157,14 +180,112 @@ ${body}
 
     const autoDetect = vscode.workspace.getConfiguration('veloxquant').get<boolean>('autoDetectHardware', true);
     if (autoDetect) {
-      const hw = await detectHardware();
+      const hw = await detectHardware(undefined, () => this.probeHardwareProfile());
       if (hw.chip || hw.ramGb) {
-        this.post({ type: 'prefill', values: { chip: hw.chip, ramGb: hw.ramGb } });
+        this.post({ type: 'prefill', values: { chip: hw.chip, ramGb: hw.ramGb }, chipNote: hw.chipNote });
       }
     }
 
     if (inferModelShapeFromActiveEditor()) {
       this.post({ type: 'inferAvailable' });
+    }
+  }
+
+  /** stdout of `profile-hardware --json` when the installed package supports it (>= 0.91.0); undefined otherwise so detection falls back to sysctl. */
+  private async probeHardwareProfile(): Promise<string | undefined> {
+    const resolution = await resolveInterpreter();
+    if (!resolution.path) return undefined;
+    const version = await getInstalledVersion(resolution.path, execFileAsync);
+    if (!version || !isVersionSupported(version, FEATURE_MINIMUMS['profile-hardware'])) return undefined;
+    return new Promise((resolve) => {
+      execFile(resolution.path as string, PROFILE_HARDWARE_ARGV, { timeout: 15000 }, (err, stdout) => {
+        resolve(err ? undefined : stdout);
+      });
+    });
+  }
+
+  /**
+   * Returns true when the installed package meets the feature's minimum (or
+   * its version can't be determined — the real command then surfaces any
+   * error). Otherwise posts a 'feature-needs-upgrade' error and returns false.
+   */
+  private async ensureFeature(interpreterPath: string, feature: PackageFeature): Promise<boolean> {
+    const version = await getInstalledVersion(interpreterPath, execFileAsync);
+    const minimum = FEATURE_MINIMUMS[feature];
+    if (version && !isVersionSupported(version, minimum)) {
+      this.post({ type: 'error', kind: 'feature-needs-upgrade', feature, minimum, version, message: `${feature} needs VeloxQuant-MLX ${minimum} or newer (installed: ${version}).` });
+      return false;
+    }
+    return true;
+  }
+
+  private async handlePickConfig(): Promise<void> {
+    const picked = await vscode.window.showOpenDialog({
+      canSelectMany: false,
+      openLabel: 'Select model config.json',
+      filters: { 'Model config': ['json'] },
+    });
+    if (picked?.[0]) {
+      this.post({ type: 'configPicked', path: picked[0].fsPath });
+    }
+  }
+
+  private async handleSubmitAuto(raw: RawAutoValues): Promise<void> {
+    const interpreterPath = await this.resolveInterpreterOrPrompt();
+    if (!interpreterPath) return;
+    if (!raw.modelConfigPath) {
+      this.post({ type: 'error', kind: 'cli-failed', message: 'Select a model config.json first.', stderr: '' });
+      return;
+    }
+    if (!(await this.ensureFeature(interpreterPath, 'auto'))) return;
+
+    this.autoAbort?.abort();
+    const abort = new AbortController();
+    this.autoAbort = abort;
+    try {
+      const result = await getAutoRecommendation(
+        interpreterPath,
+        {
+          modelConfigPath: raw.modelConfigPath,
+          objective: raw.objective as AutoObjective | undefined,
+          context: raw.context,
+          generation: raw.generation,
+          probe: raw.probe,
+        },
+        abort.signal
+      );
+      this.post({ type: 'autoResult', result });
+    } catch (err) {
+      if (err instanceof AutoRecommendError) {
+        if (err.kind === 'cancelled') {
+          this.post({ type: 'autoCancelled' });
+        } else if (err.kind === 'module-not-found') {
+          this.post({ type: 'error', kind: 'module-not-found', message: err.message, interpreterPath, stderr: err.stderr });
+        } else {
+          this.post({ type: 'error', kind: 'cli-failed', message: err.message, stderr: err.stderr });
+        }
+      } else {
+        this.post({ type: 'error', kind: 'cli-failed', message: (err as Error).message, stderr: '' });
+      }
+    } finally {
+      if (this.autoAbort === abort) this.autoAbort = undefined;
+    }
+  }
+
+  private async handleEstimateMemory(raw: RawAutoValues): Promise<void> {
+    const interpreterPath = await this.resolveInterpreterOrPrompt();
+    if (!interpreterPath) return;
+    if (!raw.modelConfigPath || !raw.context) {
+      this.post({ type: 'error', kind: 'cli-failed', message: 'Select a model config.json and set a context length first.', stderr: '' });
+      return;
+    }
+    if (!(await this.ensureFeature(interpreterPath, 'estimate-memory'))) return;
+    try {
+      const result = await getMemoryEstimate(interpreterPath, { modelConfigPath: raw.modelConfigPath, context: raw.context, top: 5 });
+      this.post({ type: 'memoryResult', result });
+    } catch (err) {
+      const e = err as Partial<EstimateMemoryError>;
+      this.post({ type: 'error', kind: 'cli-failed', message: (err as Error).message, stderr: e.stderr ?? '' });
     }
   }
 
@@ -317,6 +438,14 @@ interface RawFormValues {
   nLayers?: number;
   nKvHeads?: number;
   headDim?: number;
+}
+
+interface RawAutoValues {
+  modelConfigPath?: string;
+  objective?: string;
+  context?: number;
+  generation?: number;
+  probe?: boolean;
 }
 
 function toRequestInput(raw: RawFormValues): RecommendRequestInput {

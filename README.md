@@ -150,8 +150,9 @@ when the report finishes or fails.
   or `veloxquant.pythonPath`.
 - VeloxQuant-MLX requirements are checked per feature: **0.42.0** for
   Recommend, **0.46.0** for the panel/serve paths, **0.68.0** for profiling,
-  and **0.81.0** for worker diagnostics. **0.83.0 or newer is recommended**
-  for current cache, live-memory, and dynamic-field fixes.
+  and **0.81.0** for worker diagnostics. **0.91.0 or newer is recommended**: it adds Recommend Auto mode, hardware
+  profiling and KV memory estimates, plus current cache, live-memory, and
+  dynamic-field fixes.
 
 The Chat Playground, Local Models, and Benchmark Model features additionally
 depend on [`@veloxquant/sdk`](https://www.npmjs.com/package/@veloxquant/sdk)
