@@ -9,9 +9,13 @@ export const MIN_RECOMMEND_VERSION = '0.42.0';
 export const MIN_PANEL_VERSION = '0.46.0';
 export const MIN_PROFILE_VERSION = '0.68.0';
 export const MIN_WORKER_VERSION = '0.81.0';
-export const RECOMMENDED_VERSION = '0.83.0';
+export const MIN_AUTO_VERSION = '0.91.0';
+export const MIN_HARDWARE_PROFILE_VERSION = '0.91.0';
+export const MIN_ESTIMATE_MEMORY_VERSION = '0.91.0';
+/** Newest contracts the extension uses (Auto mode, profile-hardware, estimate-memory). */
+export const RECOMMENDED_VERSION = '0.91.0';
 
-export type PackageFeature = 'recommend' | 'panel' | 'serve' | 'profile' | 'worker';
+export type PackageFeature = 'recommend' | 'panel' | 'serve' | 'profile' | 'worker' | 'auto' | 'profile-hardware' | 'estimate-memory';
 
 export const FEATURE_MINIMUMS: Record<PackageFeature, string> = {
   recommend: MIN_RECOMMEND_VERSION,
@@ -19,6 +23,9 @@ export const FEATURE_MINIMUMS: Record<PackageFeature, string> = {
   serve: MIN_PANEL_VERSION,
   profile: MIN_PROFILE_VERSION,
   worker: MIN_WORKER_VERSION,
+  auto: MIN_AUTO_VERSION,
+  'profile-hardware': MIN_HARDWARE_PROFILE_VERSION,
+  'estimate-memory': MIN_ESTIMATE_MEMORY_VERSION,
 };
 
 export function parseVersion(version: string): [number, number, number] | undefined {

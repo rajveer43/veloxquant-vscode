@@ -80,3 +80,10 @@ test('matchInvalidChoice: does not false-positive on unrelated stderr', () => {
   const stderr = 'ModuleNotFoundError: No module named veloxquant_mlx\n';
   assert.ok(!matchInvalidChoice(stderr, '--chip', 'M5'));
 });
+
+test('buildRecommendArgv: passes the large model classes through', () => {
+  for (const modelClass of ['70B', '120B', '235B', '671B'] as const) {
+    const argv = buildRecommendArgv({ chip: 'M3', ramGb: 192, modelClass, goal: 'max_context' });
+    assert.equal(argv[argv.indexOf('--model-class') + 1], modelClass);
+  }
+});

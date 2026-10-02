@@ -259,3 +259,50 @@ button.secondary:hover {
   max-height: 200px;
   overflow: auto;
 }
+
+.inline-row {
+  display: flex;
+  gap: 4px;
+}
+
+.inline-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.ranked {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ranked li {
+  border: 1px solid var(--vscode-panel-border, var(--vscode-contrastBorder));
+  border-radius: 4px;
+  padding: 6px 8px;
+}
+
+.ranked label {
+  display: block;
+  cursor: pointer;
+}
+
+.mem-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.mem-table th,
+.mem-table td {
+  text-align: right;
+  padding: 2px 4px;
+  border-bottom: 1px solid var(--vscode-panel-border, transparent);
+}
+
+.mem-table th:first-child,
+.mem-table td:first-child {
+  text-align: left;
+}
