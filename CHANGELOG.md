@@ -16,6 +16,14 @@
 * apply feature-specific Python package version requirements
 * update the hosted playground URL and stale method, hardware, and model-management documentation
 
+## [0.6.0](https://github.com/rajveer43/veloxquant-vscode/compare/v0.5.3...v0.6.0) (2026-10-02)
+
+
+### Features
+
+* **recommend:** align with veloxquant-mlx 0.92 ([#33](https://github.com/rajveer43/veloxquant-vscode/issues/33) [#34](https://github.com/rajveer43/veloxquant-vscode/issues/34) [#35](https://github.com/rajveer43/veloxquant-vscode/issues/35) [#36](https://github.com/rajveer43/veloxquant-vscode/issues/36)) ([974d7cc](https://github.com/rajveer43/veloxquant-vscode/commit/974d7cc69d66ec6a4e10ea1db34d31dcc527ef37))
+* **recommend:** align with veloxquant-mlx 0.92 (M5/model classes, hardware profile, Auto mode, memory estimates) ([4302eb6](https://github.com/rajveer43/veloxquant-vscode/commit/4302eb679973101f13647235a2a5a51228ac2cec))
+
 ## [0.5.3](https://github.com/rajveer43/veloxquant-vscode/compare/v0.5.2...v0.5.3) (2026-09-16)
 
 
