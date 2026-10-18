@@ -33,3 +33,35 @@ test('stop() sends a JSON content type and surfaces a 403 as PanelRefusedError',
     server.close();
   }
 });
+
+async function withServer<T>(body: string, run: (client: PanelApiClient) => Promise<T>): Promise<T> {
+  const server = http.createServer((_req, res) => {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(body);
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  try {
+    return await run(new PanelApiClient((server.address() as AddressInfo).port));
+  } finally {
+    server.close();
+  }
+}
+
+test('getStatus rejects a foreign process answering on the port', async () => {
+  await withServer('{"hello":"world"}', async (client) => {
+    await assert.rejects(client.getStatus(), /does not look like a VeloxQuant-MLX panel/);
+  });
+});
+
+test('getStatus accepts a versioned panel status', async () => {
+  const body = JSON.stringify({ state: 'stopped', pid: null, ready: null, error: null, config: {}, version: '0.94.10' });
+  await withServer(body, async (client) => {
+    assert.equal((await client.getStatus()).version, '0.94.10');
+  });
+});
+
+test('getModels rejects entries with the wrong field types', async () => {
+  await withServer('{"models":[{"repo_id":1}]}', async (client) => {
+    await assert.rejects(client.getModels());
+  });
+});
