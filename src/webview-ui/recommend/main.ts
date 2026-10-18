@@ -221,8 +221,18 @@ function renderAutoResult(payload: {
   });
 }
 
+function memoryRowTitle(r: { assumptions: string[]; source?: string; measured?: { memoryBytes?: number; throughputTokS?: number; chip?: string } }): string {
+  if (r.source !== 'measured' || !r.measured) return r.assumptions.join('; ');
+  const m = r.measured;
+  const parts = ['Measured benchmark record'];
+  if (m.chip) parts.push(`chip ${m.chip}`);
+  if (m.memoryBytes !== undefined) parts.push(`resident ${formatBytes(m.memoryBytes)}`);
+  if (m.throughputTokS !== undefined) parts.push(`${m.throughputTokS.toFixed(1)} tok/s`);
+  return parts.join(' · ');
+}
+
 function renderMemoryResult(payload: {
-  result: { strategies: (AutoMemoryPayload & { method: string })[] };
+  result: { strategies: (AutoMemoryPayload & { method: string; source?: 'measured' | 'estimated'; measured?: { memoryBytes?: number; throughputTokS?: number; chip?: string } })[] };
 }): void {
   const rows = [...payload.result.strategies].sort((a, b) => b.savingsPercent - a.savingsPercent);
   if (!rows.length) {
@@ -230,17 +240,17 @@ function renderMemoryResult(payload: {
   } else {
     memoryEl.innerHTML = `
       <table class="mem-table">
-        <thead><tr><th>Strategy</th><th>Baseline</th><th>Compressed</th><th>Resident</th><th>Saved</th></tr></thead>
+        <thead><tr><th>Strategy</th><th>Baseline</th><th>Compressed</th><th>Resident</th><th>Saved</th><th>Source</th></tr></thead>
         <tbody>${rows
           .map(
             (r) =>
-              `<tr title="${escapeHtml(r.assumptions.join('; '))}"><td>${escapeHtml(r.method)}</td><td>${formatBytes(r.baselineBytes)}</td><td>${formatBytes(
+              `<tr title="${escapeHtml(memoryRowTitle(r))}"><td>${escapeHtml(r.method)}</td><td>${formatBytes(r.baselineBytes)}</td><td>${formatBytes(
                 r.compressedBytes
-              )}</td><td>${formatBytes(r.residentBytes)}</td><td>${r.savingsPercent.toFixed(0)}%</td></tr>`
+              )}</td><td>${formatBytes(r.residentBytes)}</td><td>${r.savingsPercent.toFixed(0)}%</td><td>${r.source ?? 'estimated'}</td></tr>`
           )
           .join('')}</tbody>
       </table>
-      <div class="estimate-note">Analytic estimates before weights are loaded; hover a row for assumptions.</div>`;
+      <div class="estimate-note">${rows.some((r) => r.source === 'measured') ? 'Rows tagged measured have a matching benchmark record; the others are analytic estimates' : 'Analytic estimates before weights are loaded'}; hover a row for details.</div>`;
   }
   memoryEl.hidden = false;
 }

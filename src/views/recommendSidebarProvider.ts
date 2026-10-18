@@ -321,7 +321,7 @@ ${body}
     }
     if (!(await this.ensureFeature(interpreterPath, 'estimate-memory'))) return;
     try {
-      const result = await getMemoryEstimate(interpreterPath, { modelConfigPath: raw.modelConfigPath, context: raw.context, top: 5 }, (method) =>
+      const result = await getMemoryEstimate(interpreterPath, { modelConfigPath: raw.modelConfigPath, context: raw.context, top: 5, benchmarkDir: vscode.workspace.getConfiguration('veloxquant').get<string>('benchmarkDir', '').trim() || undefined }, (method) =>
         this.recommendLog().appendLine(`estimate-memory: dropped malformed strategy entry "${method}"`)
       );
       this.post({ type: 'memoryResult', result });

@@ -184,6 +184,11 @@
           "maximum": 65535,
           "description": "Port for the local VeloxQuant-MLX control panel server (loopback only, not configurable to any other host)."
         },
+        "veloxquant.benchmarkDir": {
+          "type": "string",
+          "default": "",
+          "description": "Benchmark-database directory passed to 'estimate-memory --benchmark-dir'. Measured records matching the model replace the analytic estimate and are tagged 'measured'."
+        },
         "veloxquant.autoDetectHardware": {
           "type": "boolean",
           "default": true,
