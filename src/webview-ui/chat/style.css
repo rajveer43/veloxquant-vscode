@@ -23,6 +23,13 @@ body {
   border-bottom: 1px solid var(--vscode-panel-border);
 }
 
+.notice {
+  padding: 6px 12px;
+  font-size: 12px;
+  background: var(--vscode-inputValidation-warningBackground);
+  border-bottom: 1px solid var(--vscode-inputValidation-warningBorder);
+}
+
 .status {
   margin-left: auto;
   font-size: 12px;
