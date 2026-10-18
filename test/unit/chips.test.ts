@@ -17,3 +17,13 @@ test('mapChipName / mapChipGeneration: garbage yields undefined', () => {
   assert.equal(mapChipGeneration(0), undefined);
   assert.equal(mapChipGeneration(2.5), undefined);
 });
+
+test('mapChipName: a chip the library lists gets no note, even beyond M4', () => {
+  assert.deepEqual(mapChipName('Apple M5 Pro', ['M1', 'M2', 'M3', 'M4', 'M5']), { chip: 'M5' });
+});
+
+test('mapChipGeneration: unknown chip maps to the newest known chip below it', () => {
+  const m = mapChipGeneration(6, ['M1', 'M2', 'M3', 'M5']);
+  assert.equal(m?.chip, 'M5');
+  assert.match(m?.note ?? '', /M6.*M5/);
+});

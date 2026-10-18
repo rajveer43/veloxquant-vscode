@@ -24,6 +24,8 @@ import { buildFullSnippet } from '../insert/snippetBuilder';
 import { insertSnippet, pickInsertTarget } from '../insert/targetPicker';
 import { inferModelShapeFromActiveEditor } from '../insert/modelInference';
 import { detectHardware } from '../hardware/detect';
+import { FALLBACK_RULESET, getRuleset } from '../python/rulesetClient';
+import type { Ruleset } from '../python/rulesetClient';
 import { PanelApiClient, DEFAULT_PANEL_PORT } from '../server/panelApiClient';
 
 const ISSUE_TEMPLATE_URL = 'https://github.com/rajveer43/veloxquant-vscode/issues/new';
@@ -178,9 +180,14 @@ ${body}
       this.post({ type: 'platformNotice', message: 'VeloxQuant-MLX targets Apple Silicon Macs. Recommendations may not work on this host.' });
     }
 
+    const ruleset = await this.loadRuleset();
+    if (ruleset !== FALLBACK_RULESET) {
+      this.post({ type: 'ruleset', ruleset });
+    }
+
     const autoDetect = vscode.workspace.getConfiguration('veloxquant').get<boolean>('autoDetectHardware', true);
     if (autoDetect) {
-      const hw = await detectHardware(undefined, () => this.probeHardwareProfile());
+      const hw = await detectHardware(undefined, () => this.probeHardwareProfile(), ruleset.chips);
       if (hw.chip || hw.ramGb) {
         this.post({ type: 'prefill', values: { chip: hw.chip, ramGb: hw.ramGb }, chipNote: hw.chipNote });
       }
@@ -189,6 +196,14 @@ ${body}
     if (inferModelShapeFromActiveEditor()) {
       this.post({ type: 'inferAvailable' });
     }
+  }
+
+  /** Form choices from the installed library's `recommend --dump-ruleset`; built-in lists when unavailable. */
+  private async loadRuleset(): Promise<Ruleset> {
+    const resolution = await resolveInterpreter();
+    if (!resolution.path) return FALLBACK_RULESET;
+    const version = await getInstalledVersion(resolution.path, execFileAsync);
+    return getRuleset(resolution.path, version);
   }
 
   /** stdout of `profile-hardware --json` when the installed package supports it (>= 0.91.0); undefined otherwise so detection falls back to sysctl. */
