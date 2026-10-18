@@ -1,0 +1,20 @@
+{
+  "workload": {
+    "head_dim": 128,
+    "seq_len": 8192,
+    "n_layers": 32,
+    "batch_size": 1,
+    "n_kv_heads": 8
+  },
+  "hardware": {
+    "total_memory_bytes": 19069665280,
+    "active_memory_bytes": 8
+  },
+  "config": {
+    "method": "kivi",
+    "head_dim": 128,
+    "bit_width_inlier": 2,
+    "kivi_group_size": 32
+  },
+  "reason": "2048 <= seq_len=8192 < 16384 (mid-length context): selected kivi (2-bit asymmetric group quantization) as a balanced default"
+}

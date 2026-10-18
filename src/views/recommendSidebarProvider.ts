@@ -1,4 +1,5 @@
 import { execFile } from 'node:child_process';
+import { readFile } from 'node:fs/promises';
 import * as vscode from 'vscode';
 import { promptSelectInterpreter, resolveInterpreter, buildPipInstallCommand } from '../python/interpreter';
 import {
@@ -18,6 +19,7 @@ import {
 import type { PackageFeature } from '../python/versionCheck';
 import { AutoRecommendError, explainAutoRecommendation, getAutoRecommendation } from '../python/autoRecommendClient';
 import type { AutoObjective } from '../python/autoRecommendClient';
+import { AutoConfigError, getAutoConfig, shapeFromModelConfig } from '../python/autoConfigClient';
 import { EstimateMemoryError, getMemoryEstimate } from '../python/estimateMemoryClient';
 import { PROFILE_HARDWARE_ARGV } from '../hardware/profileHardware';
 import { buildFullSnippet } from '../insert/snippetBuilder';
@@ -152,6 +154,9 @@ ${body}
         break;
       case 'explainAuto':
         await this.handleExplainAuto(message.values as RawAutoValues);
+        break;
+      case 'fitDevice':
+        await this.handleFitDevice(message.values as RawAutoValues);
         break;
       case 'estimateMemory':
         await this.handleEstimateMemory(message.values as RawAutoValues);
@@ -309,6 +314,30 @@ ${body}
       }
     } finally {
       if (this.autoAbort === abort) this.autoAbort = undefined;
+    }
+  }
+
+  private async handleFitDevice(raw: RawAutoValues): Promise<void> {
+    const interpreterPath = await this.resolveInterpreterOrPrompt();
+    if (!interpreterPath) return;
+    const fail = (message: string, stderr = ''): void => this.post({ type: 'error', kind: 'cli-failed', message, stderr });
+    if (!raw.modelConfigPath) return fail('Select a model config.json first.');
+    let config: unknown;
+    try {
+      config = JSON.parse(await readFile(raw.modelConfigPath, 'utf8'));
+    } catch (err) {
+      return fail(`Could not read ${raw.modelConfigPath}: ${(err as Error).message}`);
+    }
+    const shape = shapeFromModelConfig(config, raw.context ?? 4096);
+    if (!shape) return fail('The model config is missing num_hidden_layers, num_attention_heads or a derivable head dimension.');
+    try {
+      this.post({ type: 'fitResult', result: await getAutoConfig(interpreterPath, shape) });
+    } catch (err) {
+      if (err instanceof AutoConfigError && err.kind === 'module-not-found') {
+        this.post({ type: 'error', kind: 'module-not-found', message: err.message, interpreterPath, stderr: err.stderr });
+      } else {
+        fail((err as Error).message, (err as Partial<AutoConfigError>).stderr ?? '');
+      }
     }
   }
 

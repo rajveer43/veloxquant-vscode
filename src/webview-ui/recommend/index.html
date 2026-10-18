@@ -123,9 +123,11 @@
       <button type="submit" id="auto-submit-btn">Get Auto recommendation</button>
       <button type="button" id="auto-cancel-btn" class="secondary" hidden>Cancel</button>
       <button type="button" id="memory-btn" class="secondary">Compare KV memory</button>
+      <button type="button" id="fit-btn" class="secondary" title="Pick a KV config that fits this device's free memory (veloxquant auto-config)">Fit to my device</button>
     </div>
   </form>
 
+  <div id="fit-result" hidden></div>
   <div id="memory-result" hidden></div>
   <div id="result" hidden></div>
   <div id="error-area" hidden></div>

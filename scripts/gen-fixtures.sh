@@ -27,6 +27,7 @@ vq recommend --chip M4 --ram-gb 32 --model-class 7B --goal everyday --json > "$o
 vq recommend --auto --no-probe --json --model-config "$work/config.json" > "$out/recommend-auto.json"
 vq recommend --dump-ruleset --json > "$out/ruleset.json"
 vq estimate-memory --json --model-config "$work/config.json" > "$out/estimate-memory.json"
+vq auto-config --json --head-dim 128 --seq-len 8192 --n-layers 32 --batch-size 1 --n-kv-heads 8 > "$out/auto-config.json"
 # Host-specific values (chip, memory, bandwidth) are scrubbed so the fixture only drifts with the schema.
 vq profile-hardware --json > "$out/profile-hardware.json"
 
