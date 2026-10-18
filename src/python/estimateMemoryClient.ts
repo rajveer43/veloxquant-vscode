@@ -9,6 +9,7 @@
  * entries are all malformed is a schema mismatch and fails as `parse-failed`.
  */
 import { execFile } from 'node:child_process';
+import { MIN_ESTIMATE_MEMORY_VERSION } from './versionCheck';
 
 export interface EstimateMemoryInput {
   /** Path to a HuggingFace-style model config.json. */
@@ -192,7 +193,7 @@ export async function getMemoryEstimate(
       throw new EstimateMemoryError('module-not-found', 'VeloxQuant-MLX is not installed in this interpreter.', stderr);
     }
     if (/invalid choice: 'estimate-memory'|unrecognized arguments|No module named veloxquant_mlx\.__main__/i.test(stderr)) {
-      throw new EstimateMemoryError('unsupported-command', 'The installed VeloxQuant-MLX does not support `estimate-memory` (needs 0.91.0+).', stderr);
+      throw new EstimateMemoryError('unsupported-command', 'The installed VeloxQuant-MLX does not support `estimate-memory` (needs ' + MIN_ESTIMATE_MEMORY_VERSION + '+).', stderr);
     }
     throw new EstimateMemoryError('non-zero-exit', `veloxquant_mlx estimate-memory exited with code ${code}.`, stderr);
   }

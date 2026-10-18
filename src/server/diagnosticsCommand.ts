@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { resolveInterpreter } from '../python/interpreter';
-import { RECOMMENDED_VERSION, classifyVersion } from '../python/versionCheck';
+import { MIN_WORKER_VERSION, RECOMMENDED_VERSION, classifyVersion } from '../python/versionCheck';
 import { ensureSdkReady } from '../sdk/versionGate';
 
 interface WorkerCapabilities {
@@ -36,7 +36,7 @@ export async function runDiagnosticsCommand(): Promise<void> {
       throw new Error(`MLX reports that Metal is unavailable on ${capabilities.device}.`);
     }
     const probe = await worker.metalProbe();
-    const compatibility = classifyVersion(capabilities.veloxquantVersion, '0.81.0');
+    const compatibility = classifyVersion(capabilities.veloxquantVersion, MIN_WORKER_VERSION);
     const report = [
       '# VeloxQuant-MLX Diagnostics', '',
       `- Interpreter: \`${resolution.path}\` (${resolution.source})`,
