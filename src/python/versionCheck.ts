@@ -12,8 +12,10 @@ export const MIN_WORKER_VERSION = '0.81.0';
 export const MIN_AUTO_VERSION = '0.91.0';
 export const MIN_HARDWARE_PROFILE_VERSION = '0.91.0';
 export const MIN_ESTIMATE_MEMORY_VERSION = '0.91.0';
-/** Newest contracts the extension uses (Auto mode, profile-hardware, estimate-memory). */
-export const RECOMMENDED_VERSION = '0.91.0';
+/** First release whose method registry carries the `maturity` field (veloxquant-mlx #782/#788). */
+export const MIN_METHOD_METADATA_VERSION = '0.93.0';
+/** Library version the extension is aligned with (contracts, chip list, panel security checks). */
+export const RECOMMENDED_VERSION = '0.94.10';
 
 export type PackageFeature = 'recommend' | 'panel' | 'serve' | 'profile' | 'worker' | 'auto' | 'profile-hardware' | 'estimate-memory';
 

@@ -1,6 +1,6 @@
 /**
  * Shared chip mapping for hardware detection. `recommend --chip` only accepts
- * M1–M4 (veloxquant-mlx 0.92.2); a newer chip is mapped to the nearest known
+ * M1–M4 (veloxquant-mlx 0.94.x); a newer chip is mapped to the nearest known
  * one so the form never offers a value the CLI rejects.
  */
 export type RecommendChip = 'M1' | 'M2' | 'M3' | 'M4';
