@@ -16,6 +16,46 @@
 * apply feature-specific Python package version requirements
 * update the hosted playground URL and stale method, hardware, and model-management documentation
 
+## [0.7.0](https://github.com/rajveer43/veloxquant-vscode/compare/v0.6.1...v0.7.0) (2026-10-18)
+
+
+### Features
+
+* **chat:** QFilters low-retention toast and accounting-only notice ([aa72664](https://github.com/rajveer43/veloxquant-vscode/commit/aa7266478b916cdfd65317a527254287cc11f89d))
+* **chat:** QFilters low-retention toast and accounting-only notice ([d4bd89a](https://github.com/rajveer43/veloxquant-vscode/commit/d4bd89a0d59b854538a511af2ec7ec5a8fdadb89)), closes [#52](https://github.com/rajveer43/veloxquant-vscode/issues/52)
+* **diagnostics:** list methods that ship a Metal kernel ([e6f0e8e](https://github.com/rajveer43/veloxquant-vscode/commit/e6f0e8ea4536df3435827c88fa53b55e0ee66096))
+* **diagnostics:** list methods that ship a Metal kernel ([0ac394c](https://github.com/rajveer43/veloxquant-vscode/commit/0ac394ce683c757fdf5781ec3efc92cb31460b51)), closes [#54](https://github.com/rajveer43/veloxquant-vscode/issues/54)
+* **diagnostics:** measure memory bandwidth via profile-hardware --measure-bandwidth ([8176bf6](https://github.com/rajveer43/veloxquant-vscode/commit/8176bf6d09573988303659120dc8e5d0981ac865))
+* **diagnostics:** measure memory bandwidth via profile-hardware --measure-bandwidth ([3c63aa3](https://github.com/rajveer43/veloxquant-vscode/commit/3c63aa341cc6e7b18429c891adc77ededa46333d)), closes [#53](https://github.com/rajveer43/veloxquant-vscode/issues/53)
+* **estimate-memory:** support --benchmark-dir and tag measured vs estimated ([136d966](https://github.com/rajveer43/veloxquant-vscode/commit/136d9666dd4fccb1c0b1b4d3570cc3bedba6f416))
+* **estimate-memory:** support --benchmark-dir and tag measured vs estimated ([9997530](https://github.com/rajveer43/veloxquant-vscode/commit/999753085b427cd9c291214eb473d7e7e50bcced)), closes [#51](https://github.com/rajveer43/veloxquant-vscode/issues/51)
+* **insert:** emit explicit values for knobs whose library defaults changed ([fe7dd62](https://github.com/rajveer43/veloxquant-vscode/commit/fe7dd629e240eee440d1dfa221aa8a510687bcef))
+* **insert:** emit explicit values for knobs whose library defaults changed ([40af04f](https://github.com/rajveer43/veloxquant-vscode/commit/40af04f3506b034cb748c2df9b1df06a2ebbd9eb)), closes [#55](https://github.com/rajveer43/veloxquant-vscode/issues/55)
+* **methods:** add 'methods --json' client exposing maturity and field_schema ([e6b2d9d](https://github.com/rajveer43/veloxquant-vscode/commit/e6b2d9d737b10a852d9cac87d773accde89a5dae))
+* **methods:** add 'methods --json' client exposing maturity and field_schema ([b7dbf1b](https://github.com/rajveer43/veloxquant-vscode/commit/b7dbf1b924bd12e4ee5f62d7bcdea1ae34381ef5)), closes [#45](https://github.com/rajveer43/veloxquant-vscode/issues/45)
+* **methods:** show maturity in pickers and hide experimental by default ([e548bd2](https://github.com/rajveer43/veloxquant-vscode/commit/e548bd291f8789192d5ab9965ecf7d29a7907004))
+* **methods:** show maturity in pickers and hide experimental by default ([4e1ea05](https://github.com/rajveer43/veloxquant-vscode/commit/4e1ea054495581659d11dc29ed724a936a63da7e)), closes [#46](https://github.com/rajveer43/veloxquant-vscode/issues/46)
+* **recommend:** Fit to my device via auto-config ([7221d56](https://github.com/rajveer43/veloxquant-vscode/commit/7221d56ba1890fe8d8b8d22712d38354b8710fbe))
+* **recommend:** Fit to my device via auto-config ([df73559](https://github.com/rajveer43/veloxquant-vscode/commit/df73559b565eb1fae5b4f204f426dc7c1f31699d)), closes [#48](https://github.com/rajveer43/veloxquant-vscode/issues/48)
+* **recommend:** read form choices from 'recommend --dump-ruleset' ([b840612](https://github.com/rajveer43/veloxquant-vscode/commit/b8406127cd30f4f052b7bbcf821ab24fb5b7c960))
+* **recommend:** read form choices from 'recommend --dump-ruleset' ([f758970](https://github.com/rajveer43/veloxquant-vscode/commit/f758970ecda12f4403a5df2d4f1f6885ba5b9471)), closes [#44](https://github.com/rajveer43/veloxquant-vscode/issues/44)
+* **recommend:** schema-driven knob editor and profile --set ([582ab12](https://github.com/rajveer43/veloxquant-vscode/commit/582ab12735dfa161473e27ee7538168d241c0c99))
+* **recommend:** schema-driven knob editor and profile --set ([0908acf](https://github.com/rajveer43/veloxquant-vscode/commit/0908acfe6dd0bc6aa2936f54d2ed67fad03b6cea)), closes [#47](https://github.com/rajveer43/veloxquant-vscode/issues/47)
+* **recommend:** surface planner evidence, objective scores and --explain in Auto results ([8269b0d](https://github.com/rajveer43/veloxquant-vscode/commit/8269b0d09c141f4aef8b0dc4135706f60c8c54dc))
+* **recommend:** surface planner evidence, objective scores and --explain in Auto results ([c7e4673](https://github.com/rajveer43/veloxquant-vscode/commit/c7e4673cc838e90a8b577c5b94bf984a79b21ab8)), closes [#50](https://github.com/rajveer43/veloxquant-vscode/issues/50)
+* **serve:** Start/Stop VLM Server command ([1fa5c30](https://github.com/rajveer43/veloxquant-vscode/commit/1fa5c30787d14273b4b18295e44ed57fd864feaf))
+* **serve:** Start/Stop VLM Server command with status bar state ([72f3803](https://github.com/rajveer43/veloxquant-vscode/commit/72f3803a6b7a3321b2975296d45f07078cbeddcc))
+
+
+### Bug Fixes
+
+* **estimate-memory:** fail with parse-failed when all strategies are malformed ([3fef0fb](https://github.com/rajveer43/veloxquant-vscode/commit/3fef0fb5d7d6fe143b9bf369395da4f568e78a84))
+* **estimate-memory:** fail with parse-failed when all strategies are malformed ([c0489a8](https://github.com/rajveer43/veloxquant-vscode/commit/c0489a8226cf84123ec88ba4ae1af3cf74083912)), closes [#43](https://github.com/rajveer43/veloxquant-vscode/issues/43)
+* **panel:** handle 403 from Host/Origin/Content-Type checks ([5d1cdee](https://github.com/rajveer43/veloxquant-vscode/commit/5d1cdeefd9c7e15f9c78c7efcfe22a67750bebf7))
+* **panel:** handle 403 origin/host refusals and always send JSON content type on POST ([2a4ee03](https://github.com/rajveer43/veloxquant-vscode/commit/2a4ee0337fd35414c6c0dec334775a68e544579d)), closes [#41](https://github.com/rajveer43/veloxquant-vscode/issues/41)
+* **versions:** align RECOMMENDED_VERSION with veloxquant-mlx 0.94.10 ([8d9f69a](https://github.com/rajveer43/veloxquant-vscode/commit/8d9f69a37a5947010a29b1c2934f303dd30ae452))
+* **versions:** align RECOMMENDED_VERSION with veloxquant-mlx 0.94.10 ([c1ab4cb](https://github.com/rajveer43/veloxquant-vscode/commit/c1ab4cbe320c039b100edd01100ad7b7a6c95f28)), closes [#42](https://github.com/rajveer43/veloxquant-vscode/issues/42)
+
 ## [0.6.1](https://github.com/rajveer43/veloxquant-vscode/compare/v0.6.0...v0.6.1) (2026-10-03)
 
 
