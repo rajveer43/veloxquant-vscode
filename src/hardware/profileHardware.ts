@@ -7,12 +7,16 @@ import { mapChipGeneration, mapChipName } from './chips';
 import type { MappedChip } from './chips';
 
 export const PROFILE_HARDWARE_ARGV = ['-m', 'veloxquant_mlx', 'profile-hardware', '--json'];
+/** Same, plus a short MLX copy benchmark that reports `measured_bandwidth_gbps`. */
+export const MEASURE_BANDWIDTH_ARGV = [...PROFILE_HARDWARE_ARGV, '--measure-bandwidth'];
 
 export interface HardwareProfile {
   chip: MappedChip | undefined;
   totalMemoryBytes: number | undefined;
   metalAvailable: boolean | undefined;
   peakMemoryBandwidthGbps: number | undefined;
+  /** Present only when run with `--measure-bandwidth`. */
+  measuredBandwidthGbps?: number;
 }
 
 function positiveNumber(value: unknown): number | undefined {
@@ -41,5 +45,6 @@ export function parseProfileHardware(stdout: string, knownChips?: readonly strin
     totalMemoryBytes,
     metalAvailable: typeof o.metal_available === 'boolean' ? o.metal_available : undefined,
     peakMemoryBandwidthGbps: positiveNumber(o.peak_memory_bandwidth_gbps),
+    measuredBandwidthGbps: positiveNumber(o.measured_bandwidth_gbps),
   };
 }

@@ -1,4 +1,5 @@
 import { execFile } from 'node:child_process';
+import { readFile } from 'node:fs/promises';
 import * as vscode from 'vscode';
 import { promptSelectInterpreter, resolveInterpreter, buildPipInstallCommand } from '../python/interpreter';
 import {
@@ -16,8 +17,12 @@ import {
   RECOMMENDED_VERSION,
 } from '../python/versionCheck';
 import type { PackageFeature } from '../python/versionCheck';
-import { AutoRecommendError, getAutoRecommendation } from '../python/autoRecommendClient';
+import { AutoRecommendError, explainAutoRecommendation, getAutoRecommendation } from '../python/autoRecommendClient';
 import type { AutoObjective } from '../python/autoRecommendClient';
+import { getMethods } from '../python/methodsClient';
+import { EDITABLE_TYPES } from '../insert/knobEdits';
+import type { EditableField } from '../insert/knobEdits';
+import { AutoConfigError, getAutoConfig, shapeFromModelConfig } from '../python/autoConfigClient';
 import { EstimateMemoryError, getMemoryEstimate } from '../python/estimateMemoryClient';
 import { PROFILE_HARDWARE_ARGV } from '../hardware/profileHardware';
 import { buildFullSnippet } from '../insert/snippetBuilder';
@@ -123,6 +128,12 @@ ${body}
       case 'insert':
         await this.handleInsert(message.method as string, message.knobs as Record<string, string | number | boolean>);
         break;
+      case 'profileWith':
+        void vscode.commands.executeCommand('veloxquant.profileModel', {
+          method: message.method as string,
+          knobs: message.knobs as Record<string, string | number | boolean>,
+        });
+        break;
       case 'copyCommand':
         await this.handleCopyCommand();
         break;
@@ -149,6 +160,12 @@ ${body}
         break;
       case 'cancelAuto':
         this.autoAbort?.abort();
+        break;
+      case 'explainAuto':
+        await this.handleExplainAuto(message.values as RawAutoValues);
+        break;
+      case 'fitDevice':
+        await this.handleFitDevice(message.values as RawAutoValues);
         break;
       case 'estimateMemory':
         await this.handleEstimateMemory(message.values as RawAutoValues);
@@ -245,6 +262,28 @@ ${body}
     }
   }
 
+  private async handleExplainAuto(raw: RawAutoValues): Promise<void> {
+    const interpreterPath = await this.resolveInterpreterOrPrompt();
+    if (!interpreterPath || !raw.modelConfigPath) return;
+    if (!(await this.ensureFeature(interpreterPath, 'auto'))) return;
+    const log = this.recommendLog();
+    try {
+      const text = await explainAutoRecommendation(interpreterPath, {
+        modelConfigPath: raw.modelConfigPath,
+        objective: raw.objective as AutoObjective | undefined,
+        context: raw.context,
+        generation: raw.generation,
+        probe: raw.probe,
+      });
+      log.appendLine(`--- recommend --auto --explain (${new Date().toLocaleTimeString()}) ---`);
+      log.appendLine(text);
+      log.show(true);
+    } catch (err) {
+      const e = err as Partial<AutoRecommendError>;
+      this.post({ type: 'error', kind: 'cli-failed', message: (err as Error).message, stderr: e.stderr ?? '' });
+    }
+  }
+
   private async handleSubmitAuto(raw: RawAutoValues): Promise<void> {
     const interpreterPath = await this.resolveInterpreterOrPrompt();
     if (!interpreterPath) return;
@@ -287,6 +326,30 @@ ${body}
     }
   }
 
+  private async handleFitDevice(raw: RawAutoValues): Promise<void> {
+    const interpreterPath = await this.resolveInterpreterOrPrompt();
+    if (!interpreterPath) return;
+    const fail = (message: string, stderr = ''): void => this.post({ type: 'error', kind: 'cli-failed', message, stderr });
+    if (!raw.modelConfigPath) return fail('Select a model config.json first.');
+    let config: unknown;
+    try {
+      config = JSON.parse(await readFile(raw.modelConfigPath, 'utf8'));
+    } catch (err) {
+      return fail(`Could not read ${raw.modelConfigPath}: ${(err as Error).message}`);
+    }
+    const shape = shapeFromModelConfig(config, raw.context ?? 4096);
+    if (!shape) return fail('The model config is missing num_hidden_layers, num_attention_heads or a derivable head dimension.');
+    try {
+      this.post({ type: 'fitResult', result: await getAutoConfig(interpreterPath, shape) });
+    } catch (err) {
+      if (err instanceof AutoConfigError && err.kind === 'module-not-found') {
+        this.post({ type: 'error', kind: 'module-not-found', message: err.message, interpreterPath, stderr: err.stderr });
+      } else {
+        fail((err as Error).message, (err as Partial<AutoConfigError>).stderr ?? '');
+      }
+    }
+  }
+
   private async handleEstimateMemory(raw: RawAutoValues): Promise<void> {
     const interpreterPath = await this.resolveInterpreterOrPrompt();
     if (!interpreterPath) return;
@@ -296,8 +359,8 @@ ${body}
     }
     if (!(await this.ensureFeature(interpreterPath, 'estimate-memory'))) return;
     try {
-      const result = await getMemoryEstimate(interpreterPath, { modelConfigPath: raw.modelConfigPath, context: raw.context, top: 5 }, (method) =>
-        this.estimateLog().appendLine(`estimate-memory: dropped malformed strategy entry "${method}"`)
+      const result = await getMemoryEstimate(interpreterPath, { modelConfigPath: raw.modelConfigPath, context: raw.context, top: 5, benchmarkDir: vscode.workspace.getConfiguration('veloxquant').get<string>('benchmarkDir', '').trim() || undefined }, (method) =>
+        this.recommendLog().appendLine(`estimate-memory: dropped malformed strategy entry "${method}"`)
       );
       this.post({ type: 'memoryResult', result });
     } catch (err) {
@@ -306,10 +369,10 @@ ${body}
     }
   }
 
-  private estimateOutput?: vscode.OutputChannel;
+  private recommendOutput?: vscode.OutputChannel;
 
-  private estimateLog(): vscode.OutputChannel {
-    return (this.estimateOutput ??= vscode.window.createOutputChannel('VeloxQuant-MLX Estimate'));
+  private recommendLog(): vscode.OutputChannel {
+    return (this.recommendOutput ??= vscode.window.createOutputChannel('VeloxQuant-MLX Recommend'));
   }
 
   private handleInfer(): void {
@@ -344,7 +407,8 @@ ${body}
     try {
       const response = await getRecommendation(interpreterPath, input);
       const docsUrl = await this.tryResolveDocsUrl(response.recommendation.method);
-      this.post({ type: 'result', response, docsUrl });
+      const fieldSchema = await this.fieldSchemaFor(interpreterPath, response.recommendation.method);
+      this.post({ type: 'result', response, docsUrl, fieldSchema });
     } catch (err) {
       if (err instanceof RecommendError) {
         if (err.kind === 'module-not-found') {
@@ -381,6 +445,24 @@ ${body}
   }
 
   /** Uses the local panel server's /api/methods docs_url field when reachable; omits the link otherwise (never guesses a slug). */
+  private methodsCache?: { interpreterPath: string; methods: Promise<Awaited<ReturnType<typeof getMethods>>['methods']> };
+
+  /** Editable `field_schema` entries for `method`; empty on installs that predate `methods --json`. */
+  private async fieldSchemaFor(interpreterPath: string, method: string): Promise<EditableField[]> {
+    try {
+      if (this.methodsCache?.interpreterPath !== interpreterPath) {
+        this.methodsCache = { interpreterPath, methods: getMethods(interpreterPath).then((r) => r.methods) };
+      }
+      const info = (await this.methodsCache.methods).find((m) => m.name === method);
+      return (info?.fieldSchema ?? [])
+        .filter((f) => EDITABLE_TYPES.includes(f.type))
+        .map((f) => ({ name: f.name, type: f.type, default: f.default, help: f.help }));
+    } catch {
+      this.methodsCache = undefined;
+      return [];
+    }
+  }
+
   private async tryResolveDocsUrl(method: string): Promise<string | undefined> {
     try {
       const port = vscode.workspace.getConfiguration('veloxquant').get<number>('panelPort', DEFAULT_PANEL_PORT);

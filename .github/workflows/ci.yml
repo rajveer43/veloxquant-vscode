@@ -1,13 +1,36 @@
 name: CI
 
 on:
+  schedule:
+    - cron: '0 6 * * 1'
   pull_request:
     branches: [master]
   push:
     branches: [master]
 
 jobs:
+  # Weekly: install the newest veloxquant-mlx, capture its CLI JSON and run the
+  # contract tests against it, so a key the extension reads disappearing fails CI.
+  contract-drift:
+    if: github.event_name == 'schedule'
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Capture latest library output
+        run: |
+          scripts/gen-fixtures.sh
+          newest="$(ls -d test/fixtures/veloxquant-* | sort -V | tail -1)"
+          echo "VQ_FIXTURE_DIR=$PWD/$newest" >> "$GITHUB_ENV"
+      - name: Contract tests
+        run: node --import tsx --test test/unit/contract.test.ts
+
   build-and-test:
+    if: github.event_name != 'schedule'
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4

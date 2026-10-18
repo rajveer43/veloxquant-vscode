@@ -5,13 +5,16 @@ import { PlaygroundLauncherProvider } from './views/playgroundLauncherProvider';
 import { PanelServerManager, reapOrphanedPanelProcess } from './server/panelServerManager';
 import { DEFAULT_PANEL_PORT, PanelRefusedError } from './server/panelApiClient';
 import { StatusBarManager } from './server/statusBarManager';
+import { VlmServerManager } from './server/vlmServerManager';
 import { LogTailManager } from './server/logTailManager';
 import { profileModel } from './server/profileManager';
+import type { ProfilePreset } from './server/profileManager';
 import { resolveInterpreter, promptSelectInterpreter } from './python/interpreter';
 import { LocalModelsProvider, pullModelCommand, deleteModelCommand } from './views/localModelsProvider';
 import { ChatPlaygroundPanel } from './views/chatPlaygroundPanel';
 import { runBenchmarkCommand } from './server/benchmarkCommand';
 import { runDiagnosticsCommand } from './server/diagnosticsCommand';
+import { measureBandwidthCommand } from './server/bandwidthCommand';
 
 let serverManager: PanelServerManager | undefined;
 let statusBarManager: StatusBarManager | undefined;
@@ -110,8 +113,9 @@ export function activate(context: vscode.ExtensionContext): void {
       await runProfileModel();
     })
   );
-  context.subscriptions.push(vscode.commands.registerCommand('veloxquant.profileModel', runProfileModel));
+  context.subscriptions.push(vscode.commands.registerCommand('veloxquant.profileModel', (preset?: ProfilePreset) => runProfileModel(preset)));
   context.subscriptions.push(vscode.commands.registerCommand('veloxquant.runDiagnostics', runDiagnosticsCommand));
+  context.subscriptions.push(vscode.commands.registerCommand('veloxquant.measureBandwidth', measureBandwidthCommand));
 
   const localModelsProvider = new LocalModelsProvider();
   context.subscriptions.push(vscode.window.registerTreeDataProvider(LocalModelsProvider.viewType, localModelsProvider));
@@ -139,6 +143,13 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('veloxquant.benchmarkModel', () => runBenchmarkCommand())
   );
 
+  const vlmServer = new VlmServerManager();
+  context.subscriptions.push(
+    vlmServer,
+    vscode.commands.registerCommand('veloxquant.startVlmServer', () => vlmServer.start()),
+    vscode.commands.registerCommand('veloxquant.stopVlmServer', () => vlmServer.stop())
+  );
+
   statusBarManager = new StatusBarManager(() => serverManager);
   statusBarManager.start();
   context.subscriptions.push(statusBarManager);
@@ -157,12 +168,12 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 }
 
-async function runProfileModel(): Promise<void> {
+async function runProfileModel(preset?: ProfilePreset): Promise<void> {
   await profileModel(async () => {
     if (ChatPlaygroundPanel.hasLoadedModel()) return true;
     const state = await serverManager?.getInferenceServerState();
     return state === 'starting' || state === 'running';
-  });
+  }, preset);
 }
 
 /**

@@ -66,3 +66,21 @@ test('buildFullSnippet: produces valid-looking multi-line Python with imports an
   assert.match(snippet, /config = KVCacheConfig\(method='turboquant_rvq', bit_width_inlier=1, seed=42\)/);
   assert.match(snippet, /caches = KVCacheBuilder\.for_model\(model, config\)/);
 });
+
+test('buildKVCacheConfigSnippet: xquant emits xquant_residual_bits=4 explicitly', () => {
+  assert.equal(buildKVCacheConfigSnippet('xquant', {}), "KVCacheConfig(method='xquant', xquant_residual_bits=4)");
+});
+
+test('buildKVCacheConfigSnippet: a caller-provided value is not duplicated or overridden', () => {
+  assert.equal(buildKVCacheConfigSnippet('xquant', { xquant_residual_bits: 2 }), "KVCacheConfig(method='xquant', xquant_residual_bits=2)");
+});
+
+test('buildKVCacheConfigSnippet: turboquant methods pin enable_vectorized_attend', () => {
+  assert.match(buildKVCacheConfigSnippet('turboquant_prod', {}), /enable_vectorized_attend=True/);
+  assert.match(buildKVCacheConfigSnippet('turboquant_mse', {}), /enable_vectorized_attend=True/);
+});
+
+test('buildFullSnippet: explains explicit defaults with a comment line', () => {
+  const snippet = buildFullSnippet('xquant', {});
+  assert.match(snippet, /# xquant_residual_bits set explicitly: .*\nconfig = KVCacheConfig\(.*xquant_residual_bits=4\)/);
+});

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildMethodsArgv, parseMethods, MethodsError } from '../../src/python/methodsClient';
+import { buildMethodsArgv, metalKernelMethods, parseMethods, MethodsError } from '../../src/python/methodsClient';
 import { discoverServableMethods } from '../../src/sdk/methods';
 import { isVersionSupported } from '../../src/python/versionCheck';
 
@@ -64,4 +64,14 @@ test('arrangeForPicker: hides experimental by default and sorts stable first', (
 test('arrangeForPicker: methods without maturity are kept in order', () => {
   const list = [{ n: 'a' }, { n: 'b' }] as Array<{ n: string; maturity?: 'stable' }>;
   assert.deepEqual(arrangeForPicker(list, false).map((m) => m.n), ['a', 'b']);
+});
+
+test('parseMethods: reads capabilities.has_metal_kernel and lists Metal methods', () => {
+  const r = parseMethods(payload([
+    entry('kivi', { capabilities: { has_metal_kernel: true } }),
+    entry('h2o', { capabilities: { has_metal_kernel: false } }),
+    entry('tova'),
+  ]));
+  assert.deepEqual(r.methods.map((m) => m.hasMetalKernel), [true, false, undefined]);
+  assert.deepEqual(metalKernelMethods(r.methods), ['kivi']);
 });

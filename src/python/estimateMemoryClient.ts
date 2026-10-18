@@ -9,6 +9,7 @@
  * entries are all malformed is a schema mismatch and fails as `parse-failed`.
  */
 import { execFile } from 'node:child_process';
+import { MIN_ESTIMATE_MEMORY_VERSION } from './versionCheck';
 
 export interface EstimateMemoryInput {
   /** Path to a HuggingFace-style model config.json. */
@@ -16,6 +17,8 @@ export interface EstimateMemoryInput {
   context: number;
   /** Limit to the N best strategies. */
   top?: number;
+  /** Benchmark-database dir; matching measured records are reported under `empirical`. */
+  benchmarkDir?: string;
 }
 
 export interface StrategyMemoryEstimate {
@@ -26,6 +29,23 @@ export interface StrategyMemoryEstimate {
   savingsPercent: number;
   confidence?: string;
   assumptions: string[];
+  peakBytes?: number;
+  workspaceBytes?: number;
+  reductionRatio?: number;
+  /** 'measured' when a benchmark record for this method matched; otherwise the analytic 'estimated' figure. */
+  source: 'measured' | 'estimated';
+  measured?: MeasuredRecord;
+}
+
+/** The fields of a benchmark-database record (`BenchmarkRecord.to_dict()`) worth showing; all optional. */
+export interface MeasuredRecord {
+  memoryBytes?: number;
+  /** Ratio of measured bytes to the fp16 baseline (0.19 = 81% savings). */
+  memoryReduction?: number;
+  throughputTokS?: number;
+  latencyMsPerToken?: number;
+  perplexityDelta?: number;
+  chip?: string;
 }
 
 export interface EstimateMemoryResult {
@@ -61,8 +81,24 @@ export function buildEstimateMemoryArgv(input: EstimateMemoryInput): string[] {
   if (input.top !== undefined) {
     argv.push('--top', String(input.top));
   }
+  if (input.benchmarkDir) {
+    argv.push('--benchmark-dir', input.benchmarkDir);
+  }
   argv.push('--json');
   return argv;
+}
+
+function parseMeasured(raw: unknown): MeasuredRecord | undefined {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const r = raw as Record<string, unknown>;
+  return {
+    memoryBytes: num(r.memory_bytes),
+    memoryReduction: num(r.memory_reduction),
+    throughputTokS: num(r.throughput_tok_s),
+    latencyMsPerToken: num(r.latency_ms_per_token),
+    perplexityDelta: num(r.perplexity_delta),
+    chip: typeof r.chip === 'string' ? r.chip : undefined,
+  };
 }
 
 function num(value: unknown): number | undefined {
@@ -82,6 +118,7 @@ export function parseEstimateMemory(stdout: string, onDropped?: (method: string)
     throw new EstimateMemoryError('parse-failed', 'estimate-memory output has no "strategies" object.', '');
   }
 
+  const empiricalRaw = (raw as { empirical?: unknown }).empirical as Record<string, unknown> | null | undefined;
   const strategies: StrategyMemoryEstimate[] = [];
   for (const [method, entry] of Object.entries(strategiesRaw)) {
     const e = entry as Record<string, unknown> | null;
@@ -93,6 +130,7 @@ export function parseEstimateMemory(stdout: string, onDropped?: (method: string)
       onDropped?.(method);
       continue;
     }
+    const measured = parseMeasured(empiricalRaw?.[method]);
     strategies.push({
       method,
       baselineBytes,
@@ -101,6 +139,11 @@ export function parseEstimateMemory(stdout: string, onDropped?: (method: string)
       savingsPercent,
       confidence: typeof e?.confidence === 'string' ? e.confidence : undefined,
       assumptions: Array.isArray(e?.assumptions) ? e.assumptions.filter((a): a is string => typeof a === 'string') : [],
+      peakBytes: num(e?.peak_bytes),
+      workspaceBytes: num(e?.workspace_bytes),
+      reductionRatio: num(e?.reduction_ratio),
+      source: measured ? 'measured' : 'estimated',
+      measured,
     });
   }
   const total = Object.keys(strategiesRaw).length;
@@ -150,7 +193,7 @@ export async function getMemoryEstimate(
       throw new EstimateMemoryError('module-not-found', 'VeloxQuant-MLX is not installed in this interpreter.', stderr);
     }
     if (/invalid choice: 'estimate-memory'|unrecognized arguments|No module named veloxquant_mlx\.__main__/i.test(stderr)) {
-      throw new EstimateMemoryError('unsupported-command', 'The installed VeloxQuant-MLX does not support `estimate-memory` (needs 0.91.0+).', stderr);
+      throw new EstimateMemoryError('unsupported-command', 'The installed VeloxQuant-MLX does not support `estimate-memory` (needs ' + MIN_ESTIMATE_MEMORY_VERSION + '+).', stderr);
     }
     throw new EstimateMemoryError('non-zero-exit', `veloxquant_mlx estimate-memory exited with code ${code}.`, stderr);
   }

@@ -53,6 +53,7 @@ function render(): void {
       <label class="agent-toggle"><input type="checkbox" id="agent-toggle" ${agentMode ? 'checked' : ''} /> Agent mode</label>
       <span id="status" class="status">${escapeHtml(statusText())}</span>
     </div>
+    <div class="notice">Compression is accounting-only: caches store dequantized fp16 tensors, so reported byte counts do not correspond to real runtime memory savings.</div>
     <div id="transcript" class="transcript"></div>
     <div class="composer">
       <textarea id="prompt-input" placeholder="Message the model…" rows="3"></textarea>

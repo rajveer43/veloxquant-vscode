@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "allowed_ram_gb": [
+    8,
+    16,
+    24,
+    32,
+    36,
+    48,
+    64,
+    96,
+    128,
+    192,
+    512
+  ],
+  "model_classes": [
+    "1B",
+    "3B",
+    "7B",
+    "14B",
+    "32B",
+    "70B",
+    "120B",
+    "235B",
+    "671B"
+  ],
+  "goals": [
+    "everyday",
+    "max_key_accounting",
+    "max_context",
+    "best_quality",
+    "constant_memory"
+  ],
+  "chips": [
+    "M1",
+    "M2",
+    "M3",
+    "M4"
+  ],
+  "weight_gb_4bit_estimate": {
+    "1B": 0.8,
+    "3B": 2.0,
+    "7B": 4.5,
+    "14B": 8.0,
+    "32B": 18.0,
+    "70B": 40.0,
+    "120B": 68.0,
+    "235B": 132.0,
+    "671B": 380.0
+  },
+  "defaults": {
+    "everyday": {
+      "method": "turboquant_rvq",
+      "bit_width_inlier": 1,
+      "ratio": 7.5
+    },
+    "max_key_accounting": {
+      "method": "vecinfer",
+      "ratio": 16.0
+    },
+    "best_quality": {
+      "method": "kivi",
+      "bit_width_inlier": 4,
+      "ratio": 3.0
+    },
+    "max_context": {
+      "method": "kivi",
+      "bit_width_inlier": 2,
+      "ratio": 4.7
+    },
+    "constant_memory": {
+      "method": "streaming_llm",
+      "ratio": 1.0,
+      "resident_likely": true
+    }
+  }
+}

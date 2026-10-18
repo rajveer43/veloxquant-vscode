@@ -3,6 +3,8 @@
  * context (no Node, no direct VS Code API) and talks to the extension host
  * exclusively via postMessage.
  */
+import { mergeKnobEdits, parseKnobInput } from '../../insert/knobEdits';
+import type { EditableField } from '../../insert/knobEdits';
 
 // Minimal ambient declaration for the VS Code webview API injected at
 // runtime; avoids depending on @types/vscode-webview just for this.
@@ -39,6 +41,8 @@ const autoSubmitBtn = document.getElementById('auto-submit-btn') as HTMLButtonEl
 const autoCancelBtn = document.getElementById('auto-cancel-btn') as HTMLButtonElement;
 const memoryBtn = document.getElementById('memory-btn') as HTMLButtonElement;
 const memoryEl = document.getElementById('memory-result') as HTMLDivElement;
+const fitBtn = document.getElementById('fit-btn') as HTMLButtonElement;
+const fitEl = document.getElementById('fit-result') as HTMLDivElement;
 const chipNoteEl = document.getElementById('chip-note') as HTMLDivElement;
 
 interface RulesetMessage {
@@ -93,6 +97,7 @@ function clearOutputs(): void {
   errorEl.hidden = true;
   resultEl.hidden = true;
   memoryEl.hidden = true;
+  fitEl.hidden = true;
 }
 
 document.querySelectorAll('input[name="mode"]').forEach((el) => {
@@ -121,6 +126,7 @@ function readAutoForm(): Record<string, unknown> {
 function setAutoBusy(busy: boolean): void {
   autoSubmitBtn.disabled = busy;
   memoryBtn.disabled = busy;
+  fitBtn.disabled = busy;
   autoCancelBtn.hidden = !busy;
   autoSubmitBtn.textContent = busy ? 'Working…' : 'Get Auto recommendation';
 }
@@ -142,6 +148,32 @@ memoryBtn.addEventListener('click', () => {
   vscode.postMessage({ type: 'estimateMemory', values: readAutoForm() });
 });
 
+fitBtn.addEventListener('click', () => {
+  errorEl.hidden = true;
+  fitEl.hidden = true;
+  vscode.postMessage({ type: 'fitDevice', values: readAutoForm() });
+});
+
+function renderFitResult(payload: {
+  result: { method: string; knobs: Record<string, string | number | boolean>; reason: string; freeMemoryBytes: number; fp16KvBytes: number; fitsUncompressed: boolean };
+}): void {
+  const r = payload.result;
+  const knobs = Object.entries(r.knobs).map(([k, v]) => `${escapeHtml(k)}=${escapeHtml(String(v))}`).join(', ');
+  fitEl.innerHTML = `
+    <div class="notice ${r.fitsUncompressed ? '' : 'notice-warning'}">${
+      r.fitsUncompressed
+        ? `Full fp16 KV (${formatBytes(r.fp16KvBytes)}) fits in ${formatBytes(r.freeMemoryBytes)} of free memory; compression is optional here.`
+        : `Does not fit uncompressed: fp16 KV needs ${formatBytes(r.fp16KvBytes)} but only ${formatBytes(r.freeMemoryBytes)} is free. Use the compressed config below, a shorter context, or a smaller model.`
+    }</div>
+    <div><strong>${escapeHtml(r.method)}</strong>${knobs ? ` <span class="estimate-note">${knobs}</span>` : ''}</div>
+    <div class="estimate-note">${escapeHtml(r.reason)}</div>
+    <div class="actions"><button id="fit-insert-btn" type="button">Insert into editor</button></div>`;
+  fitEl.hidden = false;
+  document.getElementById('fit-insert-btn')?.addEventListener('click', () => {
+    vscode.postMessage({ type: 'insert', method: r.method, knobs: r.knobs });
+  });
+}
+
 function formatBytes(n: number): string {
   if (n >= 1024 ** 3) return `${(n / 1024 ** 3).toFixed(2)} GB`;
   if (n >= 1024 ** 2) return `${(n / 1024 ** 2).toFixed(1)} MB`;
@@ -155,20 +187,43 @@ interface AutoMemoryPayload {
   savingsPercent: number;
   confidence?: string;
   assumptions: string[];
+  peakBytes?: number;
+  workspaceBytes?: number;
+}
+
+interface AutoRankedPayload {
+  method: string;
+  score: number;
+  memory?: AutoMemoryPayload;
+  warnings: string[];
+  evidence?: string;
+  objectiveScores?: Record<string, number>;
+}
+
+/** Evidence tag, per-objective scores and peak/workspace memory for one ranked entry. */
+function autoDetails(r: AutoRankedPayload): string {
+  const parts: string[] = [];
+  if (r.evidence) parts.push(`evidence: ${escapeHtml(r.evidence)}`);
+  if (r.objectiveScores) {
+    parts.push(`scores: ${Object.entries(r.objectiveScores).map(([k, v]) => `${escapeHtml(k)} ${v.toFixed(2)}`).join(', ')}`);
+  }
+  if (r.memory?.peakBytes !== undefined) parts.push(`peak ${formatBytes(r.memory.peakBytes)}`);
+  if (r.memory?.workspaceBytes !== undefined) parts.push(`workspace ${formatBytes(r.memory.workspaceBytes)}`);
+  return parts.length ? `<div class="estimate-note">${parts.join(' · ')}</div>` : '';
 }
 
 function renderAutoResult(payload: {
-  result: { fallbackUsed: boolean; ranked: { method: string; score: number; memory?: AutoMemoryPayload; warnings: string[] }[] };
+  result: { fallbackUsed: boolean; fallbackReason?: string; ranked: AutoRankedPayload[] };
 }): void {
   setAutoBusy(false);
-  const { ranked, fallbackUsed } = payload.result;
+  const { ranked, fallbackUsed, fallbackReason } = payload.result;
   if (!ranked.length) {
     resultEl.innerHTML = '<p>No strategies were ranked for this model and workload.</p>';
     resultEl.hidden = false;
     return;
   }
   resultEl.innerHTML = `
-    ${fallbackUsed ? '<div class="notice notice-warning">Hardware probe unavailable — ranking used fallback defaults.</div>' : ''}
+    ${fallbackUsed ? `<div class="notice notice-warning">Ranking used fallback defaults${fallbackReason ? `: ${escapeHtml(fallbackReason)}` : ' (no viable candidates or hardware probe unavailable).'}</div>` : ''}
     <ul class="ranked">${ranked
       .map(
         (r, i) => `<li><label>
@@ -181,21 +236,35 @@ function renderAutoResult(payload: {
                 }</div>`
               : ''
           }
+          ${autoDetails(r)}
           ${r.warnings.length ? `<ul class="warnings">${r.warnings.map((w) => `<li>${escapeHtml(w)}</li>`).join('')}</ul>` : ''}
         </label></li>`
       )
       .join('')}</ul>
-    <div class="actions"><button id="auto-insert-btn" type="button">Insert selected into editor</button></div>
+    <div class="actions"><button id="auto-insert-btn" type="button">Insert selected into editor</button> <button id="auto-explain-btn" type="button" class="secondary">Explain</button></div>
   `;
   resultEl.hidden = false;
+  document.getElementById('auto-explain-btn')?.addEventListener('click', () => {
+    vscode.postMessage({ type: 'explainAuto', values: readAutoForm() });
+  });
   document.getElementById('auto-insert-btn')?.addEventListener('click', () => {
     const selected = resultEl.querySelector('input[name="auto-method"]:checked') as HTMLInputElement | null;
     if (selected) vscode.postMessage({ type: 'insert', method: selected.value, knobs: {} });
   });
 }
 
+function memoryRowTitle(r: { assumptions: string[]; source?: string; measured?: { memoryBytes?: number; throughputTokS?: number; chip?: string } }): string {
+  if (r.source !== 'measured' || !r.measured) return r.assumptions.join('; ');
+  const m = r.measured;
+  const parts = ['Measured benchmark record'];
+  if (m.chip) parts.push(`chip ${m.chip}`);
+  if (m.memoryBytes !== undefined) parts.push(`resident ${formatBytes(m.memoryBytes)}`);
+  if (m.throughputTokS !== undefined) parts.push(`${m.throughputTokS.toFixed(1)} tok/s`);
+  return parts.join(' · ');
+}
+
 function renderMemoryResult(payload: {
-  result: { strategies: (AutoMemoryPayload & { method: string })[] };
+  result: { strategies: (AutoMemoryPayload & { method: string; source?: 'measured' | 'estimated'; measured?: { memoryBytes?: number; throughputTokS?: number; chip?: string } })[] };
 }): void {
   const rows = [...payload.result.strategies].sort((a, b) => b.savingsPercent - a.savingsPercent);
   if (!rows.length) {
@@ -203,17 +272,17 @@ function renderMemoryResult(payload: {
   } else {
     memoryEl.innerHTML = `
       <table class="mem-table">
-        <thead><tr><th>Strategy</th><th>Baseline</th><th>Compressed</th><th>Resident</th><th>Saved</th></tr></thead>
+        <thead><tr><th>Strategy</th><th>Baseline</th><th>Compressed</th><th>Resident</th><th>Saved</th><th>Source</th></tr></thead>
         <tbody>${rows
           .map(
             (r) =>
-              `<tr title="${escapeHtml(r.assumptions.join('; '))}"><td>${escapeHtml(r.method)}</td><td>${formatBytes(r.baselineBytes)}</td><td>${formatBytes(
+              `<tr title="${escapeHtml(memoryRowTitle(r))}"><td>${escapeHtml(r.method)}</td><td>${formatBytes(r.baselineBytes)}</td><td>${formatBytes(
                 r.compressedBytes
-              )}</td><td>${formatBytes(r.residentBytes)}</td><td>${r.savingsPercent.toFixed(0)}%</td></tr>`
+              )}</td><td>${formatBytes(r.residentBytes)}</td><td>${r.savingsPercent.toFixed(0)}%</td><td>${r.source ?? 'estimated'}</td></tr>`
           )
           .join('')}</tbody>
       </table>
-      <div class="estimate-note">Analytic estimates before weights are loaded; hover a row for assumptions.</div>`;
+      <div class="estimate-note">${rows.some((r) => r.source === 'measured') ? 'Rows tagged measured have a matching benchmark record; the others are analytic estimates' : 'Analytic estimates before weights are loaded'}; hover a row for details.</div>`;
   }
   memoryEl.hidden = false;
 }
@@ -266,6 +335,29 @@ function escapeHtml(s: string): string {
   return div.innerHTML;
 }
 
+type KnobValue = string | number | boolean;
+
+function knobInput(f: EditableField, recommended: Record<string, KnobValue>): string {
+  const value = f.name in recommended ? recommended[f.name] : f.default;
+  const id = `knob-${escapeHtml(f.name)}`;
+  const title = f.help ? ` title="${escapeHtml(f.help)}"` : '';
+  const control = f.type === 'bool'
+    ? `<select id="${id}" data-knob="${escapeHtml(f.name)}"><option value="true"${value === true ? ' selected' : ''}>true</option><option value="false"${value === true ? '' : ' selected'}>false</option></select>`
+    : `<input id="${id}" data-knob="${escapeHtml(f.name)}" type="${f.type === 'str' ? 'text' : 'number'}"${f.type === 'float' ? ' step="any"' : ''} value="${escapeHtml(value === null || value === undefined ? '' : String(value))}" />`;
+  return `<div class="field"${title}><label for="${id}">${escapeHtml(f.name)}</label>${control}${f.help ? `<div class="estimate-note">${escapeHtml(f.help)}</div>` : ''}</div>`;
+}
+
+/** Recommended knobs plus any edited inputs (see mergeKnobEdits for which edits are kept). */
+function collectKnobs(recommended: Record<string, KnobValue>, fields: EditableField[]): Record<string, KnobValue> {
+  const edits: Record<string, KnobValue> = {};
+  for (const f of fields) {
+    const el = document.getElementById(`knob-${f.name}`) as HTMLInputElement | HTMLSelectElement | null;
+    const parsed = el ? parseKnobInput(f.type, el.value) : undefined;
+    if (parsed !== undefined) edits[f.name] = parsed;
+  }
+  return mergeKnobEdits(recommended, edits, fields);
+}
+
 function renderResult(payload: {
   response: {
     recommendation: {
@@ -280,6 +372,7 @@ function renderResult(payload: {
     };
   };
   docsUrl?: string;
+  fieldSchema?: EditableField[];
 }): void {
   submitBtn.disabled = false;
   submitBtn.textContent = 'Get recommendation';
@@ -295,6 +388,7 @@ function renderResult(payload: {
     : 'Accounting only — RAM usage likely unchanged';
 
   const knobEntries = Object.entries(rec.knobs);
+  const fields = payload.fieldSchema ?? [];
 
   resultEl.innerHTML = `
     <div class="method-heading">${heading}</div>
@@ -312,6 +406,11 @@ function renderResult(payload: {
         ? `<ul class="warnings">${rec.warnings.map((w) => `<li>${escapeHtml(w)}</li>`).join('')}</ul>`
         : ''
     }
+    ${
+      fields.length
+        ? `<details class="knob-editor"><summary>Edit settings</summary>${fields.map((f) => knobInput(f, rec.knobs)).join('')}</details>`
+        : ''
+    }
     <div class="rationale">${escapeHtml(rec.rationale)}</div>
     <div class="before-after">
       <div><span class="value">${rec.kv_fp16_mb} MB</span><br />fp16</div>
@@ -322,12 +421,16 @@ function renderResult(payload: {
     <div class="actions">
       <button id="insert-btn" type="button">Insert into editor</button>
       <button id="copy-cmd-btn" type="button" class="secondary">Copy CLI command</button>
+      <button id="profile-btn" type="button" class="secondary">Profile with these settings</button>
     </div>
   `;
   resultEl.hidden = false;
 
   document.getElementById('insert-btn')?.addEventListener('click', () => {
-    vscode.postMessage({ type: 'insert', method: rec.method, knobs: rec.knobs });
+    vscode.postMessage({ type: 'insert', method: rec.method, knobs: collectKnobs(rec.knobs, fields) });
+  });
+  document.getElementById('profile-btn')?.addEventListener('click', () => {
+    vscode.postMessage({ type: 'profileWith', method: rec.method, knobs: collectKnobs(rec.knobs, fields) });
   });
   document.getElementById('copy-cmd-btn')?.addEventListener('click', () => {
     vscode.postMessage({ type: 'copyCommand' });
@@ -437,6 +540,9 @@ window.addEventListener('message', (event: MessageEvent) => {
       break;
     case 'autoResult':
       renderAutoResult(msg as unknown as Parameters<typeof renderAutoResult>[0]);
+      break;
+    case 'fitResult':
+      renderFitResult(msg as unknown as Parameters<typeof renderFitResult>[0]);
       break;
     case 'memoryResult':
       renderMemoryResult(msg as unknown as Parameters<typeof renderMemoryResult>[0]);

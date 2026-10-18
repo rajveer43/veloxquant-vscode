@@ -45,7 +45,10 @@
     "onCommand:veloxquant.openChatPlayground",
     "onCommand:veloxquant.benchmarkModel",
     "onCommand:veloxquant.profileModel",
-    "onCommand:veloxquant.runDiagnostics"
+    "onCommand:veloxquant.runDiagnostics",
+    "onCommand:veloxquant.measureBandwidth",
+    "onCommand:veloxquant.startVlmServer",
+    "onCommand:veloxquant.stopVlmServer"
   ],
   "contributes": {
     "viewsContainers": {
@@ -98,6 +101,16 @@
         "category": "VeloxQuant-MLX"
       },
       {
+        "command": "veloxquant.startVlmServer",
+        "title": "VeloxQuant-MLX: Start VLM Server",
+        "category": "VeloxQuant-MLX"
+      },
+      {
+        "command": "veloxquant.stopVlmServer",
+        "title": "VeloxQuant-MLX: Stop VLM Server",
+        "category": "VeloxQuant-MLX"
+      },
+      {
         "command": "veloxquant.stopInferenceServer",
         "title": "VeloxQuant-MLX: Stop Inference Server",
         "category": "VeloxQuant-MLX"
@@ -116,6 +129,11 @@
       {
         "command": "veloxquant.runDiagnostics",
         "title": "VeloxQuant-MLX: Run Diagnostics",
+        "category": "VeloxQuant-MLX"
+      },
+      {
+        "command": "veloxquant.measureBandwidth",
+        "title": "VeloxQuant-MLX: Measure Memory Bandwidth",
         "category": "VeloxQuant-MLX"
       },
       {
@@ -188,6 +206,18 @@
           "type": "boolean",
           "default": false,
           "description": "Show methods the library labels experimental in the Chat, Benchmark and Profile pickers. Requires a VeloxQuant-MLX version that reports method maturity (0.93.0+)."
+        },
+        "veloxquant.vlmPort": {
+          "type": "integer",
+          "default": 8080,
+          "minimum": 1024,
+          "maximum": 65535,
+          "description": "Port for 'Start VLM Server' (veloxquant vlm-serve). Bound to loopback only."
+        },
+        "veloxquant.benchmarkDir": {
+          "type": "string",
+          "default": "",
+          "description": "Benchmark-database directory passed to 'estimate-memory --benchmark-dir'. Measured records matching the model replace the analytic estimate and are tagged 'measured'."
         },
         "veloxquant.autoDetectHardware": {
           "type": "boolean",

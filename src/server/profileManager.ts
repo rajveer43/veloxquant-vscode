@@ -100,7 +100,13 @@ function profileMarkdown(payload: ProfilePayload): string {
   ].join('\n');
 }
 
-export async function profileModel(isAnotherModelActive: () => Promise<boolean>): Promise<void> {
+/** Method and knobs carried over from the Recommend view, so the profile run uses the edited config. */
+export interface ProfilePreset {
+  method: string;
+  knobs: Record<string, string | number | boolean>;
+}
+
+export async function profileModel(isAnotherModelActive: () => Promise<boolean>, preset?: ProfilePreset): Promise<void> {
   if (!(await ensureSdkReady('profile'))) return;
   if (await isAnotherModelActive()) {
     void vscode.window.showWarningMessage(
@@ -131,12 +137,21 @@ export async function profileModel(isAnotherModelActive: () => Promise<boolean>)
     void vscode.window.showErrorMessage('VeloxQuant-MLX: no serving-compatible methods are available in this Python environment.');
     return;
   }
-  const method = await vscode.window.showQuickPick(
-    methods.map((item) => ({ label: item.name, description: maturityBadge(item) ? `${item.family} · ${maturityBadge(item)}` : item.family, detail: item.blurb })),
-    { placeHolder: 'Servable compression method' }
-  );
+  const presetServable = preset && methods.some((item) => item.name === preset.method);
+  if (preset && !presetServable) {
+    void vscode.window.showWarningMessage(`VeloxQuant-MLX: ${preset.method} cannot be profiled here; pick another method.`);
+  }
+  const method = presetServable
+    ? { label: preset.method }
+    : await vscode.window.showQuickPick(
+        methods.map((item) => ({ label: item.name, description: maturityBadge(item) ? `${item.family} · ${maturityBadge(item)}` : item.family, detail: item.blurb })),
+        { placeHolder: 'Servable compression method' }
+      );
   if (!method) return;
-  const bitsChoice = await vscode.window.showQuickPick(['2', '1', '4'], { placeHolder: 'KV-cache bit width' });
+  const presetBits = presetServable ? preset.knobs.bit_width_inlier : undefined;
+  const bitsChoice = typeof presetBits === 'number'
+    ? String(presetBits)
+    : await vscode.window.showQuickPick(['2', '1', '4'], { placeHolder: 'KV-cache bit width' });
   if (!bitsChoice) return;
   const prompt = await vscode.window.showInputBox({
     prompt: 'Prompt used for the profiling run', value: 'The quick brown fox jumps over the lazy dog.', ignoreFocusOut: true,
@@ -153,6 +168,7 @@ export async function profileModel(isAnotherModelActive: () => Promise<boolean>)
   output.show(true);
   const argv = buildProfileArgv({
     model: modelId, method: method.label, bits: Number(bitsChoice), prompt, maxTokens: Number(maxTokensRaw),
+    overrides: presetServable ? preset.knobs : undefined,
   });
 
   try {

@@ -22,12 +22,17 @@ export interface ProfilePayload {
   };
 }
 
+import { profileSetArgs } from '../insert/knobEdits';
+import type { KnobValue } from '../insert/snippetBuilder';
+
 export function buildProfileArgv(input: {
   model: string;
   method: string;
   bits: number;
   prompt: string;
   maxTokens: number;
+  /** Extra method knobs, passed as repeated `--set FIELD=VALUE`. */
+  overrides?: Record<string, KnobValue>;
 }): string[] {
   return [
     '-m', 'veloxquant_mlx', 'profile',
@@ -36,6 +41,7 @@ export function buildProfileArgv(input: {
     '--bits', String(input.bits),
     '--prompt', input.prompt,
     '--max-tokens', String(input.maxTokens),
+    ...profileSetArgs(input.overrides ?? {}),
   ];
 }
 

@@ -306,3 +306,11 @@ button.secondary:hover {
 .mem-table td:first-child {
   text-align: left;
 }
+
+.knob-editor {
+  margin: 8px 0;
+}
+
+.knob-editor .field {
+  margin-top: 6px;
+}
