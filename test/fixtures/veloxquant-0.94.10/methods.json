@@ -1,0 +1,3972 @@
+{
+  "schema_version": 1,
+  "default_serve_method": "turboquant_rvq",
+  "accounting_only": true,
+  "accounting_note": "Compression is accounting-only: caches store dequantized fp16 tensors, so reported byte counts do not correspond to runtime memory reduction.",
+  "methods": [
+    {
+      "name": "a2ats",
+      "family": "hybrid",
+      "serve_tier": "accounting_only",
+      "serve_tier_label": "available",
+      "maturity": "experimental",
+      "is_servable": true,
+      "blurb": "A2ATS-adapted: rotary-aware vector quantization with distance gating.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed",
+        "a2ats_b",
+        "a2ats_beta",
+        "a2ats_codebook",
+        "a2ats_codebook_bits",
+        "a2ats_query_h",
+        "a2ats_retrieval_fraction",
+        "a2ats_rope_base",
+        "a2ats_rope_scaling",
+        "a2ats_sub_dim",
+        "a2ats_use_query_aware",
+        "a2ats_window"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        },
+        {
+          "name": "a2ats_b",
+          "type": "int",
+          "default": 2048,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "a2ats_beta",
+          "type": "float",
+          "default": 0.5,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "a2ats_codebook",
+          "type": "unknown",
+          "default": null,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "a2ats_codebook_bits",
+          "type": "int",
+          "default": 8,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "a2ats_query_h",
+          "type": "unknown",
+          "default": null,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "a2ats_retrieval_fraction",
+          "type": "float",
+          "default": 0.2,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "a2ats_rope_base",
+          "type": "float",
+          "default": 10000.0,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "a2ats_rope_scaling",
+          "type": "unknown",
+          "default": null,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "a2ats_sub_dim",
+          "type": "int",
+          "default": 8,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "a2ats_use_query_aware",
+          "type": "bool",
+          "default": true,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "a2ats_window",
+          "type": "int",
+          "default": 128,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "keys_and_values",
+      "coverage_label": "full estimate",
+      "paper_deviation": "Windowed RoPE rotates far keys that the paper leaves unrotated, and distance gating is frozen at write time. See issue #29.",
+      "is_adapted": true,
+      "unsupported_reason": null,
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": false,
+        "has_metal_kernel": false,
+        "compresses_keys": true,
+        "compresses_values": false,
+        "uses_eviction": false,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int",
+          "a2ats_b": "int",
+          "a2ats_beta": "float",
+          "a2ats_codebook": "unknown",
+          "a2ats_codebook_bits": "int",
+          "a2ats_query_h": "unknown",
+          "a2ats_retrieval_fraction": "float",
+          "a2ats_rope_base": "float",
+          "a2ats_rope_scaling": "unknown",
+          "a2ats_sub_dim": "int",
+          "a2ats_use_query_aware": "bool",
+          "a2ats_window": "int"
+        }
+      }
+    },
+    {
+      "name": "adakv",
+      "family": "quantization",
+      "serve_tier": "accounting_only",
+      "serve_tier_label": "available",
+      "maturity": "experimental",
+      "is_servable": true,
+      "blurb": "AdaKV-proxy: per-head adaptive bit allocation under a global budget.",
+      "config_fields": [
+        "adakv_target_avg_bits",
+        "adakv_lo_bit",
+        "adakv_mid_bit",
+        "adakv_hi_bit",
+        "adakv_group_size",
+        "adakv_update_interval"
+      ],
+      "field_schema": [
+        {
+          "name": "adakv_target_avg_bits",
+          "type": "float",
+          "default": 2.5,
+          "optional": false,
+          "help": "Global average bits/element budget."
+        },
+        {
+          "name": "adakv_lo_bit",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "adakv_mid_bit",
+          "type": "int",
+          "default": 3,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "adakv_hi_bit",
+          "type": "int",
+          "default": 4,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "adakv_group_size",
+          "type": "int",
+          "default": 32,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "adakv_update_interval",
+          "type": "int",
+          "default": 1,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "keys_only",
+      "coverage_label": "partial estimate",
+      "paper_deviation": "Default importance proxy (norm_variance) is sign-inverted vs the paper's attention-entropy criterion; set adakv_importance=\"attention_entropy\" to match the paper's sign. (The non-adaptive target==lo_bit default this note used to describe was fixed by #31 \u2014 target_avg_bits now defaults to 2.5, above lo_bit.)",
+      "is_adapted": true,
+      "unsupported_reason": null,
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": [
+          2,
+          3,
+          4
+        ],
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": false,
+        "has_metal_kernel": false,
+        "compresses_keys": true,
+        "compresses_values": false,
+        "uses_eviction": false,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "adakv_target_avg_bits": "float",
+          "adakv_lo_bit": "int",
+          "adakv_mid_bit": "int",
+          "adakv_hi_bit": "int",
+          "adakv_group_size": "int",
+          "adakv_update_interval": "int"
+        }
+      }
+    },
+    {
+      "name": "age_tiered",
+      "family": "quantization",
+      "serve_tier": "not_trimmable",
+      "serve_tier_label": "available (no prompt-cache trimming)",
+      "maturity": "experimental",
+      "is_servable": true,
+      "blurb": "AgeTieredKV: position/age-gated 3-tier precision (recent/mid/old), no eviction.",
+      "config_fields": [
+        "age_recent_boundary",
+        "age_mid_boundary",
+        "age_bits_recent",
+        "age_bits_mid",
+        "age_bits_old",
+        "age_group_size"
+      ],
+      "field_schema": [
+        {
+          "name": "age_recent_boundary",
+          "type": "int",
+          "default": 128,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "age_mid_boundary",
+          "type": "int",
+          "default": 1024,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "age_bits_recent",
+          "type": "int",
+          "default": 8,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "age_bits_mid",
+          "type": "int",
+          "default": 4,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "age_bits_old",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "age_group_size",
+          "type": "int",
+          "default": 32,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "none",
+      "coverage_label": "no estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": "serves correctly, but reports is_trimmable() == False, so mlx_lm.server cannot trim its prompt cache \u2014 trim() would roll back offset bookkeeping without reverting internal eviction state. Expected for eviction/compression caches (#152).",
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": null,
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": false,
+        "has_metal_kernel": false,
+        "compresses_keys": true,
+        "compresses_values": false,
+        "uses_eviction": false,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "age_recent_boundary": "int",
+          "age_mid_boundary": "int",
+          "age_bits_recent": "int",
+          "age_bits_mid": "int",
+          "age_bits_old": "int",
+          "age_group_size": "int"
+        }
+      }
+    },
+    {
+      "name": "amc",
+      "family": "eviction",
+      "serve_tier": "not_trimmable",
+      "serve_tier_label": "available (no prompt-cache trimming)",
+      "maturity": "experimental",
+      "is_servable": true,
+      "blurb": "AMC: adaptive memory compression.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed",
+        "amc_adaptive_thresholds",
+        "amc_calib_variance",
+        "amc_gamma",
+        "amc_group_size",
+        "amc_k_high",
+        "amc_k_mid",
+        "amc_query_alpha",
+        "amc_threshold_window",
+        "amc_use_query_saliency"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        },
+        {
+          "name": "amc_adaptive_thresholds",
+          "type": "bool",
+          "default": false,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "amc_calib_variance",
+          "type": "float",
+          "default": null,
+          "optional": true,
+          "help": null
+        },
+        {
+          "name": "amc_gamma",
+          "type": "float",
+          "default": 0.1,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "amc_group_size",
+          "type": "int",
+          "default": 32,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "amc_k_high",
+          "type": "float",
+          "default": 0.2,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "amc_k_mid",
+          "type": "float",
+          "default": 0.3,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "amc_query_alpha",
+          "type": "float",
+          "default": 0.5,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "amc_threshold_window",
+          "type": "int",
+          "default": 64,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "amc_use_query_saliency",
+          "type": "bool",
+          "default": false,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "none",
+      "coverage_label": "no estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": "serves correctly, but reports is_trimmable() == False, so mlx_lm.server cannot trim its prompt cache \u2014 trim() would roll back offset bookkeeping without reverting internal eviction state. Expected for eviction/compression caches (#152).",
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": null,
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": true,
+        "has_metal_kernel": false,
+        "compresses_keys": false,
+        "compresses_values": false,
+        "uses_eviction": true,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int",
+          "amc_adaptive_thresholds": "bool",
+          "amc_calib_variance": "float",
+          "amc_gamma": "float",
+          "amc_group_size": "int",
+          "amc_k_high": "float",
+          "amc_k_mid": "float",
+          "amc_query_alpha": "float",
+          "amc_threshold_window": "int",
+          "amc_use_query_saliency": "bool"
+        }
+      }
+    },
+    {
+      "name": "anchorkv",
+      "family": "hybrid",
+      "serve_tier": "not_trimmable",
+      "serve_tier_label": "available (no prompt-cache trimming)",
+      "maturity": "experimental",
+      "is_servable": true,
+      "blurb": "AnchorKV-adapted: anchor-residual compression, no eviction.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed",
+        "anchorkv_anchor_frac",
+        "anchorkv_residual_bits",
+        "anchorkv_rho",
+        "anchorkv_seed",
+        "anchorkv_theta",
+        "anchorkv_window"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        },
+        {
+          "name": "anchorkv_anchor_frac",
+          "type": "float",
+          "default": 0.0078125,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "anchorkv_residual_bits",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "anchorkv_rho",
+          "type": "float",
+          "default": 0.7,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "anchorkv_seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "anchorkv_theta",
+          "type": "float",
+          "default": 0.05,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "anchorkv_window",
+          "type": "int",
+          "default": 32,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "none",
+      "coverage_label": "no estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": "serves correctly, but reports is_trimmable() == False, so mlx_lm.server cannot trim its prompt cache \u2014 trim() would roll back offset bookkeeping without reverting internal eviction state. Expected for eviction/compression caches (#152).",
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": false,
+        "has_metal_kernel": false,
+        "compresses_keys": true,
+        "compresses_values": false,
+        "uses_eviction": false,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int",
+          "anchorkv_anchor_frac": "float",
+          "anchorkv_residual_bits": "int",
+          "anchorkv_rho": "float",
+          "anchorkv_seed": "int",
+          "anchorkv_theta": "float",
+          "anchorkv_window": "int"
+        }
+      }
+    },
+    {
+      "name": "cachegen",
+      "family": "quantization",
+      "serve_tier": "accounting_only",
+      "serve_tier_label": "available",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "CacheGen: entropy-coded cache representation.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed",
+        "cachegen_bits",
+        "cachegen_group_size",
+        "cachegen_layer_groups",
+        "cachegen_per_channel",
+        "cachegen_resolved_bits",
+        "cachegen_use_delta"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        },
+        {
+          "name": "cachegen_bits",
+          "type": "int",
+          "default": 4,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "cachegen_group_size",
+          "type": "int",
+          "default": 32,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "cachegen_layer_groups",
+          "type": "int",
+          "default": 3,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "cachegen_per_channel",
+          "type": "bool",
+          "default": true,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "cachegen_resolved_bits",
+          "type": "int",
+          "default": null,
+          "optional": true,
+          "help": null
+        },
+        {
+          "name": "cachegen_use_delta",
+          "type": "bool",
+          "default": true,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "keys_and_values",
+      "coverage_label": "full estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": null,
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": [
+          2,
+          4,
+          8
+        ],
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": false,
+        "has_metal_kernel": false,
+        "compresses_keys": true,
+        "compresses_values": false,
+        "uses_eviction": false,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int",
+          "cachegen_bits": "int",
+          "cachegen_group_size": "int",
+          "cachegen_layer_groups": "int",
+          "cachegen_per_channel": "bool",
+          "cachegen_resolved_bits": "int",
+          "cachegen_use_delta": "bool"
+        }
+      }
+    },
+    {
+      "name": "cam",
+      "family": "eviction",
+      "serve_tier": "not_trimmable",
+      "serve_tier_label": "available (no prompt-cache trimming)",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "CaM: merges evicted state back instead of discarding it.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed",
+        "cam_budget",
+        "cam_merge",
+        "cam_merge_gate",
+        "cam_merge_keys",
+        "cam_n_sink"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        },
+        {
+          "name": "cam_budget",
+          "type": "int",
+          "default": 512,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "cam_merge",
+          "type": "str",
+          "default": "sim_weighted",
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "cam_merge_gate",
+          "type": "bool",
+          "default": true,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "cam_merge_keys",
+          "type": "bool",
+          "default": false,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "cam_n_sink",
+          "type": "int",
+          "default": 4,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "none",
+      "coverage_label": "no estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": "serves correctly, but reports is_trimmable() == False, so mlx_lm.server cannot trim its prompt cache \u2014 trim() would roll back offset bookkeeping without reverting internal eviction state. Expected for eviction/compression caches (#152).",
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": null,
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": true,
+        "has_metal_kernel": false,
+        "compresses_keys": false,
+        "compresses_values": false,
+        "uses_eviction": true,
+        "uses_merging": true,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int",
+          "cam_budget": "int",
+          "cam_merge": "str",
+          "cam_merge_gate": "bool",
+          "cam_merge_keys": "bool",
+          "cam_n_sink": "int"
+        }
+      }
+    },
+    {
+      "name": "chunkkv",
+      "family": "eviction",
+      "serve_tier": "not_trimmable",
+      "serve_tier_label": "available (no prompt-cache trimming)",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "ChunkKV: evicts at chunk granularity to preserve local semantics.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed",
+        "chunkkv_budget",
+        "chunkkv_chunk_size",
+        "chunkkv_n_sink",
+        "chunkkv_reuse_layers",
+        "chunkkv_score"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        },
+        {
+          "name": "chunkkv_budget",
+          "type": "int",
+          "default": 512,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "chunkkv_chunk_size",
+          "type": "int",
+          "default": 8,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "chunkkv_n_sink",
+          "type": "int",
+          "default": 4,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "chunkkv_reuse_layers",
+          "type": "int",
+          "default": 1,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "chunkkv_score",
+          "type": "str",
+          "default": "attn_mass",
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "none",
+      "coverage_label": "no estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": "serves correctly, but reports is_trimmable() == False, so mlx_lm.server cannot trim its prompt cache \u2014 trim() would roll back offset bookkeeping without reverting internal eviction state. Expected for eviction/compression caches (#152).",
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": null,
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": true,
+        "has_metal_kernel": false,
+        "compresses_keys": false,
+        "compresses_values": false,
+        "uses_eviction": true,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int",
+          "chunkkv_budget": "int",
+          "chunkkv_chunk_size": "int",
+          "chunkkv_n_sink": "int",
+          "chunkkv_reuse_layers": "int",
+          "chunkkv_score": "str"
+        }
+      }
+    },
+    {
+      "name": "curdkv",
+      "family": "eviction",
+      "serve_tier": "not_trimmable",
+      "serve_tier_label": "available (no prompt-cache trimming)",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "CurDKV: CUR decomposition for value-aware selection.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed",
+        "curdkv_budget",
+        "curdkv_n_sink",
+        "curdkv_rank_cap",
+        "curdkv_rope_base"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        },
+        {
+          "name": "curdkv_budget",
+          "type": "int",
+          "default": 512,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "curdkv_n_sink",
+          "type": "int",
+          "default": 4,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "curdkv_rank_cap",
+          "type": "int",
+          "default": 16,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "curdkv_rope_base",
+          "type": "float",
+          "default": 10000.0,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "none",
+      "coverage_label": "no estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": "serves correctly, but reports is_trimmable() == False, so mlx_lm.server cannot trim its prompt cache \u2014 trim() would roll back offset bookkeeping without reverting internal eviction state. Expected for eviction/compression caches (#152).",
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": null,
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": true,
+        "has_metal_kernel": false,
+        "compresses_keys": false,
+        "compresses_values": false,
+        "uses_eviction": true,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int",
+          "curdkv_budget": "int",
+          "curdkv_n_sink": "int",
+          "curdkv_rank_cap": "int",
+          "curdkv_rope_base": "float"
+        }
+      }
+    },
+    {
+      "name": "gear",
+      "family": "quantization",
+      "serve_tier": "accounting_only",
+      "serve_tier_label": "available",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "GEAR: quantization plus a low-rank error-correction term.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed",
+        "gear_bits",
+        "gear_energy_threshold",
+        "gear_group_size",
+        "gear_quantize_values",
+        "gear_rank",
+        "gear_sparse_fraction"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        },
+        {
+          "name": "gear_bits",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "gear_energy_threshold",
+          "type": "float",
+          "default": 0.9,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "gear_group_size",
+          "type": "int",
+          "default": 32,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "gear_quantize_values",
+          "type": "bool",
+          "default": true,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "gear_rank",
+          "type": "int",
+          "default": null,
+          "optional": true,
+          "help": null
+        },
+        {
+          "name": "gear_sparse_fraction",
+          "type": "float",
+          "default": 0.01,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "keys_and_values",
+      "coverage_label": "full estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": null,
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": [
+          2,
+          4
+        ],
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": false,
+        "has_metal_kernel": false,
+        "compresses_keys": true,
+        "compresses_values": true,
+        "uses_eviction": false,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int",
+          "gear_bits": "int",
+          "gear_energy_threshold": "float",
+          "gear_group_size": "int",
+          "gear_quantize_values": "bool",
+          "gear_rank": "int",
+          "gear_sparse_fraction": "float"
+        }
+      }
+    },
+    {
+      "name": "h2o",
+      "family": "eviction",
+      "serve_tier": "not_trimmable",
+      "serve_tier_label": "available (no prompt-cache trimming)",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "H2O: keeps 'heavy hitter' tokens by accumulated attention.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed",
+        "h2o_budget",
+        "h2o_decay",
+        "h2o_grace",
+        "h2o_n_sink",
+        "h2o_rope_base"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        },
+        {
+          "name": "h2o_budget",
+          "type": "int",
+          "default": 512,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "h2o_decay",
+          "type": "float",
+          "default": 0.98,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "h2o_grace",
+          "type": "int",
+          "default": 16,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "h2o_n_sink",
+          "type": "int",
+          "default": 4,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "h2o_rope_base",
+          "type": "float",
+          "default": 10000.0,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "none",
+      "coverage_label": "no estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": "serves correctly, but reports is_trimmable() == False, so mlx_lm.server cannot trim its prompt cache \u2014 trim() would roll back offset bookkeeping without reverting internal eviction state. Expected for eviction/compression caches (#152).",
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": null,
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": true,
+        "has_metal_kernel": true,
+        "compresses_keys": false,
+        "compresses_values": false,
+        "uses_eviction": true,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int",
+          "h2o_budget": "int",
+          "h2o_decay": "float",
+          "h2o_grace": "int",
+          "h2o_n_sink": "int",
+          "h2o_rope_base": "float"
+        }
+      }
+    },
+    {
+      "name": "keyformer",
+      "family": "eviction",
+      "serve_tier": "not_trimmable",
+      "serve_tier_label": "available (no prompt-cache trimming)",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "Keyformer: Gumbel-softmax scoring for key-token selection.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed",
+        "keyformer_anneal_steps",
+        "keyformer_budget",
+        "keyformer_n_sink",
+        "keyformer_recent",
+        "keyformer_rope_base",
+        "keyformer_seed",
+        "keyformer_tau",
+        "keyformer_tau_end",
+        "keyformer_tau_init"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        },
+        {
+          "name": "keyformer_anneal_steps",
+          "type": "int",
+          "default": 0,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "keyformer_budget",
+          "type": "int",
+          "default": 512,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "keyformer_n_sink",
+          "type": "int",
+          "default": 4,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "keyformer_recent",
+          "type": "int",
+          "default": 0,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "keyformer_rope_base",
+          "type": "float",
+          "default": 10000.0,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "keyformer_seed",
+          "type": "int",
+          "default": 0,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "keyformer_tau",
+          "type": "float",
+          "default": null,
+          "optional": true,
+          "help": null
+        },
+        {
+          "name": "keyformer_tau_end",
+          "type": "float",
+          "default": 1.0,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "keyformer_tau_init",
+          "type": "float",
+          "default": 1.0,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "none",
+      "coverage_label": "no estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": "serves correctly, but reports is_trimmable() == False, so mlx_lm.server cannot trim its prompt cache \u2014 trim() would roll back offset bookkeeping without reverting internal eviction state. Expected for eviction/compression caches (#152).",
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": null,
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": true,
+        "has_metal_kernel": false,
+        "compresses_keys": false,
+        "compresses_values": false,
+        "uses_eviction": true,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int",
+          "keyformer_anneal_steps": "int",
+          "keyformer_budget": "int",
+          "keyformer_n_sink": "int",
+          "keyformer_recent": "int",
+          "keyformer_rope_base": "float",
+          "keyformer_seed": "int",
+          "keyformer_tau": "float",
+          "keyformer_tau_end": "float",
+          "keyformer_tau_init": "float"
+        }
+      }
+    },
+    {
+      "name": "kitty",
+      "family": "quantization",
+      "serve_tier": "accounting_only",
+      "serve_tier_label": "available",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "Kitty: dynamic channel-wise mixed precision by variance.",
+      "config_fields": [
+        "kitty_hi_fraction",
+        "kitty_hi_bit",
+        "kitty_lo_bit",
+        "kitty_group_size"
+      ],
+      "field_schema": [
+        {
+          "name": "kitty_hi_fraction",
+          "type": "float",
+          "default": 0.25,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "kitty_hi_bit",
+          "type": "int",
+          "default": 4,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "kitty_lo_bit",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "kitty_group_size",
+          "type": "int",
+          "default": 32,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "keys_only",
+      "coverage_label": "partial estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": null,
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": [
+          2,
+          4
+        ],
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": false,
+        "has_metal_kernel": false,
+        "compresses_keys": true,
+        "compresses_values": false,
+        "uses_eviction": false,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "kitty_hi_fraction": "float",
+          "kitty_hi_bit": "int",
+          "kitty_lo_bit": "int",
+          "kitty_group_size": "int"
+        }
+      }
+    },
+    {
+      "name": "kivi",
+      "family": "quantization",
+      "serve_tier": "accounting_only",
+      "serve_tier_label": "available",
+      "maturity": "stable",
+      "is_servable": true,
+      "blurb": "KIVI: asymmetric per-group min/max quantization, key-per-channel.",
+      "config_fields": [
+        "bit_width_inlier",
+        "kivi_group_size"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "kivi_group_size",
+          "type": "int",
+          "default": 32,
+          "optional": false,
+          "help": "Tokens per min/max quantization group."
+        }
+      ],
+      "coverage": "keys_and_values",
+      "coverage_label": "full estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": null,
+      "docs_url": "https://veloxquant-mlx.netlify.app/docs/algorithms/kivi",
+      "capabilities": {
+        "supported_bits": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": false,
+        "has_metal_kernel": true,
+        "compresses_keys": true,
+        "compresses_values": false,
+        "uses_eviction": false,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "kivi_group_size": "int"
+        }
+      }
+    },
+    {
+      "name": "kivi_sink",
+      "family": "hybrid",
+      "serve_tier": "accounting_only",
+      "serve_tier_label": "available",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "KIVI with attention-sink protection for the first tokens.",
+      "config_fields": [
+        "bit_width_inlier",
+        "kivi_group_size",
+        "n_sink_tokens"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "kivi_group_size",
+          "type": "int",
+          "default": 32,
+          "optional": false,
+          "help": "Tokens per min/max quantization group."
+        },
+        {
+          "name": "n_sink_tokens",
+          "type": "int",
+          "default": 5,
+          "optional": false,
+          "help": "Number of early attention-sink tokens kept in fp16, never quantized."
+        }
+      ],
+      "coverage": "keys_and_values",
+      "coverage_label": "full estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": null,
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": false,
+        "has_metal_kernel": true,
+        "compresses_keys": true,
+        "compresses_values": false,
+        "uses_eviction": false,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "kivi_group_size": "int",
+          "n_sink_tokens": "int"
+        }
+      }
+    },
+    {
+      "name": "knorm",
+      "family": "eviction",
+      "serve_tier": "not_trimmable",
+      "serve_tier_label": "available (no prompt-cache trimming)",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "K-norm: evicts by key-norm as an attention proxy.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed",
+        "knorm_budget",
+        "knorm_keep",
+        "knorm_n_sink",
+        "knorm_recent"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        },
+        {
+          "name": "knorm_budget",
+          "type": "int",
+          "default": 512,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "knorm_keep",
+          "type": "str",
+          "default": "low",
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "knorm_n_sink",
+          "type": "int",
+          "default": 4,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "knorm_recent",
+          "type": "int",
+          "default": 0,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "none",
+      "coverage_label": "no estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": "serves correctly, but reports is_trimmable() == False, so mlx_lm.server cannot trim its prompt cache \u2014 trim() would roll back offset bookkeeping without reverting internal eviction state. Expected for eviction/compression caches (#152).",
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": null,
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": true,
+        "has_metal_kernel": false,
+        "compresses_keys": false,
+        "compresses_values": false,
+        "uses_eviction": true,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int",
+          "knorm_budget": "int",
+          "knorm_keep": "str",
+          "knorm_n_sink": "int",
+          "knorm_recent": "int"
+        }
+      }
+    },
+    {
+      "name": "kvquant",
+      "family": "quantization",
+      "serve_tier": "accounting_only",
+      "serve_tier_label": "available",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "KVQuant-NUQ: non-uniform levels via Lloyd-Max with fp16 outliers.",
+      "config_fields": [
+        "kvquant_bits",
+        "kvquant_outlier_fraction",
+        "kvquant_group_size",
+        "kvquant_lloyd_iters",
+        "kvquant_refit_interval",
+        "kvquant_n_sink"
+      ],
+      "field_schema": [
+        {
+          "name": "kvquant_bits",
+          "type": "int",
+          "default": 3,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "kvquant_outlier_fraction",
+          "type": "float",
+          "default": 0.01,
+          "optional": false,
+          "help": "Top-magnitude fraction kept in fp16."
+        },
+        {
+          "name": "kvquant_group_size",
+          "type": "int",
+          "default": 32,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "kvquant_lloyd_iters",
+          "type": "int",
+          "default": 8,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "kvquant_refit_interval",
+          "type": "int",
+          "default": 0,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "kvquant_n_sink",
+          "type": "int",
+          "default": 1,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "keys_and_values",
+      "coverage_label": "full estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": null,
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": [
+          2,
+          3,
+          4
+        ],
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": false,
+        "has_metal_kernel": false,
+        "compresses_keys": true,
+        "compresses_values": false,
+        "uses_eviction": false,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "kvquant_bits": "int",
+          "kvquant_outlier_fraction": "float",
+          "kvquant_group_size": "int",
+          "kvquant_lloyd_iters": "int",
+          "kvquant_refit_interval": "int",
+          "kvquant_n_sink": "int"
+        }
+      }
+    },
+    {
+      "name": "kvtc",
+      "family": "quantization",
+      "serve_tier": "accounting_only",
+      "serve_tier_label": "available",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "KVTC: transform coding of the cache.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed",
+        "kvtc_beta",
+        "kvtc_bit_budget",
+        "kvtc_bit_choices"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        },
+        {
+          "name": "kvtc_beta",
+          "type": "float",
+          "default": 3.5,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "kvtc_bit_budget",
+          "type": "int",
+          "default": 512,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "kvtc_bit_choices",
+          "type": "array",
+          "default": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            6,
+            8
+          ],
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "keys_and_values",
+      "coverage_label": "full estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": null,
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": null,
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": false,
+        "has_metal_kernel": false,
+        "compresses_keys": true,
+        "compresses_values": true,
+        "uses_eviction": false,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int",
+          "kvtc_beta": "float",
+          "kvtc_bit_budget": "int",
+          "kvtc_bit_choices": "array"
+        }
+      }
+    },
+    {
+      "name": "kvzip",
+      "family": "eviction",
+      "serve_tier": "not_trimmable",
+      "serve_tier_label": "available (no prompt-cache trimming)",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "KVzip: query-agnostic eviction via context reconstruction.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed",
+        "kvzip_budget",
+        "kvzip_n_sink",
+        "kvzip_probe"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        },
+        {
+          "name": "kvzip_budget",
+          "type": "int",
+          "default": 512,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "kvzip_n_sink",
+          "type": "int",
+          "default": 4,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "kvzip_probe",
+          "type": "str",
+          "default": "context",
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "none",
+      "coverage_label": "no estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": "serves correctly, but reports is_trimmable() == False, so mlx_lm.server cannot trim its prompt cache \u2014 trim() would roll back offset bookkeeping without reverting internal eviction state. Expected for eviction/compression caches (#152).",
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": null,
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": true,
+        "has_metal_kernel": false,
+        "compresses_keys": false,
+        "compresses_values": false,
+        "uses_eviction": true,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int",
+          "kvzip_budget": "int",
+          "kvzip_n_sink": "int",
+          "kvzip_probe": "str"
+        }
+      }
+    },
+    {
+      "name": "minicache",
+      "family": "hybrid",
+      "serve_tier": "accounting_only",
+      "serve_tier_label": "available",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "MiniCache: merges similar KV state across adjacent layers.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed",
+        "minicache_group_size",
+        "minicache_max_ctx",
+        "minicache_retention_threshold",
+        "minicache_slerp_t",
+        "minicache_start_frac"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        },
+        {
+          "name": "minicache_group_size",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "minicache_max_ctx",
+          "type": "int",
+          "default": 8192,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "minicache_retention_threshold",
+          "type": "float",
+          "default": 0.9,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "minicache_slerp_t",
+          "type": "float",
+          "default": 0.5,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "minicache_start_frac",
+          "type": "float",
+          "default": 0.5,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "keys_and_values",
+      "coverage_label": "full estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": null,
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": null,
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": false,
+        "has_metal_kernel": false,
+        "compresses_keys": true,
+        "compresses_values": false,
+        "uses_eviction": false,
+        "uses_merging": true,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int",
+          "minicache_group_size": "int",
+          "minicache_max_ctx": "int",
+          "minicache_retention_threshold": "float",
+          "minicache_slerp_t": "float",
+          "minicache_start_frac": "float"
+        }
+      }
+    },
+    {
+      "name": "morphkv",
+      "family": "eviction",
+      "serve_tier": "not_trimmable",
+      "serve_tier_label": "available (no prompt-cache trimming)",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "MorphKV: correlation-aware constant-size cache.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed",
+        "morphkv_budget",
+        "morphkv_n_sink",
+        "morphkv_window"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        },
+        {
+          "name": "morphkv_budget",
+          "type": "int",
+          "default": 512,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "morphkv_n_sink",
+          "type": "int",
+          "default": 4,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "morphkv_window",
+          "type": "int",
+          "default": 8,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "none",
+      "coverage_label": "no estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": "serves correctly, but reports is_trimmable() == False, so mlx_lm.server cannot trim its prompt cache \u2014 trim() would roll back offset bookkeeping without reverting internal eviction state. Expected for eviction/compression caches (#152).",
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": null,
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": true,
+        "has_metal_kernel": false,
+        "compresses_keys": false,
+        "compresses_values": false,
+        "uses_eviction": true,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int",
+          "morphkv_budget": "int",
+          "morphkv_n_sink": "int",
+          "morphkv_window": "int"
+        }
+      }
+    },
+    {
+      "name": "nestedkv",
+      "family": "quantization",
+      "serve_tier": "not_trimmable",
+      "serve_tier_label": "available (no prompt-cache trimming)",
+      "maturity": "experimental",
+      "is_servable": true,
+      "blurb": "NestedKV: hierarchical nested codebooks.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed",
+        "nestedkv_beta",
+        "nestedkv_budget",
+        "nestedkv_kappa",
+        "nestedkv_n_sink",
+        "nestedkv_safeguard_alpha",
+        "nestedkv_tau",
+        "nestedkv_window"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        },
+        {
+          "name": "nestedkv_beta",
+          "type": "float",
+          "default": 3.0,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "nestedkv_budget",
+          "type": "int",
+          "default": 512,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "nestedkv_kappa",
+          "type": "float",
+          "default": 10.0,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "nestedkv_n_sink",
+          "type": "int",
+          "default": 4,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "nestedkv_safeguard_alpha",
+          "type": "float",
+          "default": 0.2,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "nestedkv_tau",
+          "type": "float",
+          "default": 0.6,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "nestedkv_window",
+          "type": "int",
+          "default": 64,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "none",
+      "coverage_label": "no estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": "serves correctly, but reports is_trimmable() == False, so mlx_lm.server cannot trim its prompt cache \u2014 trim() would roll back offset bookkeeping without reverting internal eviction state. Expected for eviction/compression caches (#152).",
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": false,
+        "has_metal_kernel": false,
+        "compresses_keys": true,
+        "compresses_values": true,
+        "uses_eviction": false,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int",
+          "nestedkv_beta": "float",
+          "nestedkv_budget": "int",
+          "nestedkv_kappa": "float",
+          "nestedkv_n_sink": "int",
+          "nestedkv_safeguard_alpha": "float",
+          "nestedkv_tau": "float",
+          "nestedkv_window": "int"
+        }
+      }
+    },
+    {
+      "name": "nsnquant",
+      "family": "quantization",
+      "serve_tier": "accounting_only",
+      "serve_tier_label": "available",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "NSNQuant: normalize-shift-normalize before quantization.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed",
+        "nsn_bits",
+        "nsn_codebook_size",
+        "nsn_max_ctx",
+        "nsn_residual_length",
+        "nsn_seed",
+        "nsn_subvector_dim"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        },
+        {
+          "name": "nsn_bits",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "nsn_codebook_size",
+          "type": "int",
+          "default": 256,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "nsn_max_ctx",
+          "type": "int",
+          "default": 8192,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "nsn_residual_length",
+          "type": "int",
+          "default": 64,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "nsn_seed",
+          "type": "int",
+          "default": 1234,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "nsn_subvector_dim",
+          "type": "int",
+          "default": 8,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "keys_and_values",
+      "coverage_label": "full estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": null,
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": false,
+        "has_metal_kernel": false,
+        "compresses_keys": true,
+        "compresses_values": false,
+        "uses_eviction": false,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int",
+          "nsn_bits": "int",
+          "nsn_codebook_size": "int",
+          "nsn_max_ctx": "int",
+          "nsn_residual_length": "int",
+          "nsn_seed": "int",
+          "nsn_subvector_dim": "int"
+        }
+      }
+    },
+    {
+      "name": "palu",
+      "family": "quantization",
+      "serve_tier": "accounting_only",
+      "serve_tier_label": "available",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "PALU: true low-rank latent projection of both keys and values.",
+      "config_fields": [
+        "palu_rank",
+        "palu_energy_threshold",
+        "palu_n_head_groups",
+        "palu_hi_bit",
+        "palu_lo_bit",
+        "palu_hi_fraction",
+        "palu_group_size",
+        "palu_quantize_values"
+      ],
+      "field_schema": [
+        {
+          "name": "palu_rank",
+          "type": "int",
+          "default": null,
+          "optional": true,
+          "help": "Latent rank; blank uses the energy threshold instead."
+        },
+        {
+          "name": "palu_energy_threshold",
+          "type": "float",
+          "default": 0.9,
+          "optional": false,
+          "help": "Fraction of singular-value energy to retain."
+        },
+        {
+          "name": "palu_n_head_groups",
+          "type": "int",
+          "default": 4,
+          "optional": false,
+          "help": "Number of head groups sharing a low-rank projection."
+        },
+        {
+          "name": "palu_hi_bit",
+          "type": "int",
+          "default": 4,
+          "optional": false,
+          "help": "Mixed-bit: bits for the top latent channels."
+        },
+        {
+          "name": "palu_lo_bit",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Mixed-bit: bits for the remaining latent channels."
+        },
+        {
+          "name": "palu_hi_fraction",
+          "type": "float",
+          "default": 0.25,
+          "optional": false,
+          "help": "Fraction of latent channels kept at the higher bit-width."
+        },
+        {
+          "name": "palu_group_size",
+          "type": "int",
+          "default": 32,
+          "optional": false,
+          "help": "Tokens per latent quantization group."
+        },
+        {
+          "name": "palu_quantize_values",
+          "type": "bool",
+          "default": true,
+          "optional": false,
+          "help": "Also mixed-bit quantize values (off keeps value latents at fp16)."
+        }
+      ],
+      "coverage": "keys_and_values",
+      "coverage_label": "full estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": null,
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": [
+          2,
+          4
+        ],
+        "requires_calibration": true,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": false,
+        "has_metal_kernel": false,
+        "compresses_keys": true,
+        "compresses_values": true,
+        "uses_eviction": false,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "palu_rank": "int",
+          "palu_energy_threshold": "float",
+          "palu_n_head_groups": "int",
+          "palu_hi_bit": "int",
+          "palu_lo_bit": "int",
+          "palu_hi_fraction": "float",
+          "palu_group_size": "int",
+          "palu_quantize_values": "bool"
+        }
+      }
+    },
+    {
+      "name": "pyramidkv",
+      "family": "eviction",
+      "serve_tier": "not_trimmable",
+      "serve_tier_label": "available (no prompt-cache trimming)",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "PyramidKV: layer-varying budgets, wider at shallow layers.",
+      "config_fields": [
+        "pyramid_backend",
+        "pyramid_beta",
+        "pyramid_budget",
+        "pyramid_n_sink"
+      ],
+      "field_schema": [
+        {
+          "name": "pyramid_backend",
+          "type": "str",
+          "default": "reference",
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "pyramid_beta",
+          "type": "float",
+          "default": 2.0,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "pyramid_budget",
+          "type": "int",
+          "default": 512,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "pyramid_n_sink",
+          "type": "int",
+          "default": 4,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "none",
+      "coverage_label": "no estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": "serves correctly, but reports is_trimmable() == False, so mlx_lm.server cannot trim its prompt cache \u2014 trim() would roll back offset bookkeeping without reverting internal eviction state. Expected for eviction/compression caches (#152).",
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": null,
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": true,
+        "has_metal_kernel": true,
+        "compresses_keys": false,
+        "compresses_values": false,
+        "uses_eviction": true,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "pyramid_backend": "str",
+          "pyramid_beta": "float",
+          "pyramid_budget": "int",
+          "pyramid_n_sink": "int"
+        }
+      }
+    },
+    {
+      "name": "qfilters",
+      "family": "eviction",
+      "serve_tier": "not_trimmable",
+      "serve_tier_label": "available (no prompt-cache trimming)",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "Q-Filters: projects keys onto learned filters to score them.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed",
+        "qfilters_budget",
+        "qfilters_calib_tokens",
+        "qfilters_min_retention",
+        "qfilters_n_sink",
+        "qfilters_on_low_retention",
+        "qfilters_recent",
+        "qfilters_sign"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        },
+        {
+          "name": "qfilters_budget",
+          "type": "int",
+          "default": 512,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "qfilters_calib_tokens",
+          "type": "int",
+          "default": 128,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "qfilters_min_retention",
+          "type": "float",
+          "default": 0.9,
+          "optional": true,
+          "help": null
+        },
+        {
+          "name": "qfilters_n_sink",
+          "type": "int",
+          "default": 4,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "qfilters_on_low_retention",
+          "type": "unknown",
+          "default": "warn",
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "qfilters_recent",
+          "type": "int",
+          "default": 0,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "qfilters_sign",
+          "type": "int",
+          "default": 1,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "none",
+      "coverage_label": "no estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": "serves correctly, but reports is_trimmable() == False, so mlx_lm.server cannot trim its prompt cache \u2014 trim() would roll back offset bookkeeping without reverting internal eviction state. Expected for eviction/compression caches (#152).",
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": null,
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": true,
+        "has_metal_kernel": true,
+        "compresses_keys": false,
+        "compresses_values": false,
+        "uses_eviction": true,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int",
+          "qfilters_budget": "int",
+          "qfilters_calib_tokens": "int",
+          "qfilters_min_retention": "float",
+          "qfilters_n_sink": "int",
+          "qfilters_on_low_retention": "unknown",
+          "qfilters_recent": "int",
+          "qfilters_sign": "int"
+        }
+      }
+    },
+    {
+      "name": "rocketkv",
+      "family": "hybrid",
+      "serve_tier": "not_trimmable",
+      "serve_tier_label": "available (no prompt-cache trimming)",
+      "maturity": "experimental",
+      "is_servable": true,
+      "blurb": "RocketKV-adapted: SnapKV eviction + hybrid sparse attention selection.",
+      "config_fields": [
+        "rocketkv_compression_ratio",
+        "rocketkv_page_size",
+        "rocketkv_head_topk1",
+        "rocketkv_obs_window",
+        "rocketkv_n_sink"
+      ],
+      "field_schema": [
+        {
+          "name": "rocketkv_compression_ratio",
+          "type": "float",
+          "default": 8.0,
+          "optional": false,
+          "help": "Overall target ratio; adaptively split across both stages."
+        },
+        {
+          "name": "rocketkv_page_size",
+          "type": "int",
+          "default": null,
+          "optional": true,
+          "help": null
+        },
+        {
+          "name": "rocketkv_head_topk1",
+          "type": "int",
+          "default": null,
+          "optional": true,
+          "help": null
+        },
+        {
+          "name": "rocketkv_obs_window",
+          "type": "int",
+          "default": 32,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "rocketkv_n_sink",
+          "type": "int",
+          "default": 4,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "none",
+      "coverage_label": "no estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": "serves correctly, but reports is_trimmable() == False, so mlx_lm.server cannot trim its prompt cache \u2014 trim() would roll back offset bookkeeping without reverting internal eviction state. Expected for eviction/compression caches (#152).",
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": null,
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": false,
+        "has_metal_kernel": false,
+        "compresses_keys": true,
+        "compresses_values": false,
+        "uses_eviction": false,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "rocketkv_compression_ratio": "float",
+          "rocketkv_page_size": "int",
+          "rocketkv_head_topk1": "int",
+          "rocketkv_obs_window": "int",
+          "rocketkv_n_sink": "int"
+        }
+      }
+    },
+    {
+      "name": "skvq",
+      "family": "hybrid",
+      "serve_tier": "not_trimmable",
+      "serve_tier_label": "available (no prompt-cache trimming)",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "SKVQ: sliding-window quantization with clipped dynamic range.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed",
+        "skvq_bits_key",
+        "skvq_bits_value",
+        "skvq_clip_alpha",
+        "skvq_clip_search",
+        "skvq_group_size",
+        "skvq_max_ctx",
+        "skvq_n_sink",
+        "skvq_reorder",
+        "skvq_window"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        },
+        {
+          "name": "skvq_bits_key",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "skvq_bits_value",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "skvq_clip_alpha",
+          "type": "float",
+          "default": 1.0,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "skvq_clip_search",
+          "type": "bool",
+          "default": true,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "skvq_group_size",
+          "type": "int",
+          "default": 32,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "skvq_max_ctx",
+          "type": "int",
+          "default": null,
+          "optional": true,
+          "help": null
+        },
+        {
+          "name": "skvq_n_sink",
+          "type": "int",
+          "default": 5,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "skvq_reorder",
+          "type": "bool",
+          "default": true,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "skvq_window",
+          "type": "int",
+          "default": 128,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "keys_and_values",
+      "coverage_label": "full estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": "serves correctly, but reports is_trimmable() == False, so mlx_lm.server cannot trim its prompt cache \u2014 trim() would roll back offset bookkeeping without reverting internal eviction state. Expected for eviction/compression caches (#152).",
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": true,
+        "has_metal_kernel": false,
+        "compresses_keys": true,
+        "compresses_values": false,
+        "uses_eviction": false,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int",
+          "skvq_bits_key": "int",
+          "skvq_bits_value": "int",
+          "skvq_clip_alpha": "float",
+          "skvq_clip_search": "bool",
+          "skvq_group_size": "int",
+          "skvq_max_ctx": "int",
+          "skvq_n_sink": "int",
+          "skvq_reorder": "bool",
+          "skvq_window": "int"
+        }
+      }
+    },
+    {
+      "name": "snapkv",
+      "family": "eviction",
+      "serve_tier": "not_trimmable",
+      "serve_tier_label": "available (no prompt-cache trimming)",
+      "maturity": "stable",
+      "is_servable": true,
+      "blurb": "SnapKV: keeps tokens an observation window attends to most.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed",
+        "snap_backend",
+        "snap_batched_scoring",
+        "snap_budget",
+        "snap_dtype",
+        "snap_n_sink",
+        "snap_obs_window"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        },
+        {
+          "name": "snap_backend",
+          "type": "str",
+          "default": "auto",
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "snap_batched_scoring",
+          "type": "bool",
+          "default": true,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "snap_budget",
+          "type": "int",
+          "default": 512,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "snap_dtype",
+          "type": "str",
+          "default": "auto",
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "snap_n_sink",
+          "type": "int",
+          "default": 4,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "snap_obs_window",
+          "type": "int",
+          "default": 32,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "none",
+      "coverage_label": "no estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": "serves correctly, but reports is_trimmable() == False, so mlx_lm.server cannot trim its prompt cache \u2014 trim() would roll back offset bookkeeping without reverting internal eviction state. Expected for eviction/compression caches (#152).",
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": null,
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": true,
+        "has_metal_kernel": true,
+        "compresses_keys": false,
+        "compresses_values": false,
+        "uses_eviction": true,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int",
+          "snap_backend": "str",
+          "snap_batched_scoring": "bool",
+          "snap_budget": "int",
+          "snap_dtype": "str",
+          "snap_n_sink": "int",
+          "snap_obs_window": "int"
+        }
+      }
+    },
+    {
+      "name": "squeeze",
+      "family": "eviction",
+      "serve_tier": "not_trimmable",
+      "serve_tier_label": "available (no prompt-cache trimming)",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "SqueezeAttention: reallocates budget across layers by importance.",
+      "config_fields": [
+        "squeeze_budget",
+        "squeeze_n_sink",
+        "squeeze_strength"
+      ],
+      "field_schema": [
+        {
+          "name": "squeeze_budget",
+          "type": "int",
+          "default": 512,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "squeeze_n_sink",
+          "type": "int",
+          "default": 4,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "squeeze_strength",
+          "type": "float",
+          "default": 1.0,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "none",
+      "coverage_label": "no estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": "serves correctly, but reports is_trimmable() == False, so mlx_lm.server cannot trim its prompt cache \u2014 trim() would roll back offset bookkeeping without reverting internal eviction state. Expected for eviction/compression caches (#152).",
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": null,
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": true,
+        "has_metal_kernel": false,
+        "compresses_keys": false,
+        "compresses_values": false,
+        "uses_eviction": true,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "squeeze_budget": "int",
+          "squeeze_n_sink": "int",
+          "squeeze_strength": "float"
+        }
+      }
+    },
+    {
+      "name": "streaming_llm",
+      "family": "eviction",
+      "serve_tier": "not_trimmable",
+      "serve_tier_label": "available (no prompt-cache trimming)",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "StreamingLLM: attention sinks plus a sliding window.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed",
+        "stream_n_sink",
+        "stream_window_size"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        },
+        {
+          "name": "stream_n_sink",
+          "type": "int",
+          "default": 4,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "stream_window_size",
+          "type": "int",
+          "default": 512,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "none",
+      "coverage_label": "no estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": "serves correctly, but reports is_trimmable() == False, so mlx_lm.server cannot trim its prompt cache \u2014 trim() would roll back offset bookkeeping without reverting internal eviction state. Expected for eviction/compression caches (#152).",
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": null,
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": true,
+        "has_metal_kernel": false,
+        "compresses_keys": false,
+        "compresses_values": false,
+        "uses_eviction": true,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int",
+          "stream_n_sink": "int",
+          "stream_window_size": "int"
+        }
+      }
+    },
+    {
+      "name": "svdq",
+      "family": "quantization",
+      "serve_tier": "accounting_only",
+      "serve_tier_label": "available",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "SVDq: offline SVD to a latent basis, then mixed-precision on latents.",
+      "config_fields": [
+        "svdq_rank",
+        "svdq_energy_threshold",
+        "svdq_bit_schedule",
+        "svdq_group_size"
+      ],
+      "field_schema": [
+        {
+          "name": "svdq_rank",
+          "type": "int",
+          "default": null,
+          "optional": true,
+          "help": "Latent rank; blank uses the energy threshold instead."
+        },
+        {
+          "name": "svdq_energy_threshold",
+          "type": "float",
+          "default": 0.95,
+          "optional": false,
+          "help": "Fraction of singular-value energy to retain."
+        },
+        {
+          "name": "svdq_bit_schedule",
+          "type": "array",
+          "default": [
+            8,
+            4,
+            2,
+            1,
+            1,
+            0,
+            0,
+            0
+          ],
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "svdq_group_size",
+          "type": "int",
+          "default": 32,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "keys_only",
+      "coverage_label": "partial estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": null,
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": [
+          1,
+          2,
+          3,
+          4,
+          8
+        ],
+        "requires_calibration": true,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": false,
+        "has_metal_kernel": false,
+        "compresses_keys": true,
+        "compresses_values": false,
+        "uses_eviction": false,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "svdq_rank": "int",
+          "svdq_energy_threshold": "float",
+          "svdq_bit_schedule": "array",
+          "svdq_group_size": "int"
+        }
+      }
+    },
+    {
+      "name": "tova",
+      "family": "eviction",
+      "serve_tier": "not_trimmable",
+      "serve_tier_label": "available (no prompt-cache trimming)",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "TOVA: single-token-per-step eviction by attention weight.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed",
+        "tova_backend",
+        "tova_budget",
+        "tova_n_sink"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        },
+        {
+          "name": "tova_backend",
+          "type": "str",
+          "default": "auto",
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "tova_budget",
+          "type": "int",
+          "default": 512,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "tova_n_sink",
+          "type": "int",
+          "default": 4,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "none",
+      "coverage_label": "no estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": "serves correctly, but reports is_trimmable() == False, so mlx_lm.server cannot trim its prompt cache \u2014 trim() would roll back offset bookkeeping without reverting internal eviction state. Expected for eviction/compression caches (#152).",
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": null,
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": true,
+        "has_metal_kernel": true,
+        "compresses_keys": false,
+        "compresses_values": false,
+        "uses_eviction": true,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int",
+          "tova_backend": "str",
+          "tova_budget": "int",
+          "tova_n_sink": "int"
+        }
+      }
+    },
+    {
+      "name": "turboquant_rvq",
+      "family": "quantization",
+      "serve_tier": "accounting_only",
+      "serve_tier_label": "available",
+      "maturity": "stable",
+      "is_servable": true,
+      "blurb": "Residual vector quantization; the balanced default for serving.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        }
+      ],
+      "coverage": "keys_only",
+      "coverage_label": "partial estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": null,
+      "docs_url": "https://veloxquant-mlx.netlify.app/docs/algorithms/rvq",
+      "capabilities": {
+        "supported_bits": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": false,
+        "has_metal_kernel": true,
+        "compresses_keys": true,
+        "compresses_values": false,
+        "uses_eviction": false,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int"
+        }
+      }
+    },
+    {
+      "name": "vecinfer",
+      "family": "quantization",
+      "serve_tier": "accounting_only",
+      "serve_tier_label": "available",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "VecInfer: codebook vector quantization for aggressive compression.",
+      "config_fields": [
+        "key_sub_dim",
+        "value_sub_dim",
+        "key_codebook_bits",
+        "value_codebook_bits",
+        "residual_length"
+      ],
+      "field_schema": [
+        {
+          "name": "key_sub_dim",
+          "type": "int",
+          "default": 4,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "value_sub_dim",
+          "type": "int",
+          "default": 8,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "key_codebook_bits",
+          "type": "int",
+          "default": 12,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "value_codebook_bits",
+          "type": "int",
+          "default": 8,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "residual_length",
+          "type": "int",
+          "default": 128,
+          "optional": false,
+          "help": "Recent tokens kept uncompressed."
+        }
+      ],
+      "coverage": "keys_and_values",
+      "coverage_label": "full estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": null,
+      "docs_url": "https://veloxquant-mlx.netlify.app/docs/algorithms/vecinfer",
+      "capabilities": {
+        "supported_bits": null,
+        "requires_calibration": true,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": false,
+        "has_metal_kernel": true,
+        "compresses_keys": true,
+        "compresses_values": true,
+        "uses_eviction": false,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "key_sub_dim": "int",
+          "value_sub_dim": "int",
+          "key_codebook_bits": "int",
+          "value_codebook_bits": "int",
+          "residual_length": "int"
+        }
+      }
+    },
+    {
+      "name": "xkv",
+      "family": "eviction",
+      "serve_tier": "accounting_only",
+      "serve_tier_label": "available",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "XKV: cross-layer budget optimization.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed",
+        "xkv_energy_threshold",
+        "xkv_group_quant_size",
+        "xkv_group_size",
+        "xkv_latent_bits",
+        "xkv_max_ctx",
+        "xkv_rank"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        },
+        {
+          "name": "xkv_energy_threshold",
+          "type": "float",
+          "default": 0.95,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "xkv_group_quant_size",
+          "type": "int",
+          "default": 32,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "xkv_group_size",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "xkv_latent_bits",
+          "type": "int",
+          "default": 4,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "xkv_max_ctx",
+          "type": "int",
+          "default": 8192,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "xkv_rank",
+          "type": "int",
+          "default": null,
+          "optional": true,
+          "help": null
+        }
+      ],
+      "coverage": "keys_only",
+      "coverage_label": "partial estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": null,
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": null,
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": true,
+        "has_metal_kernel": false,
+        "compresses_keys": false,
+        "compresses_values": false,
+        "uses_eviction": true,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int",
+          "xkv_energy_threshold": "float",
+          "xkv_group_quant_size": "int",
+          "xkv_group_size": "int",
+          "xkv_latent_bits": "int",
+          "xkv_max_ctx": "int",
+          "xkv_rank": "int"
+        }
+      }
+    },
+    {
+      "name": "xquant",
+      "family": "quantization",
+      "serve_tier": "accounting_only",
+      "serve_tier_label": "available",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "XQuant: cross-layer KV reuse with anchor layers plus residuals.",
+      "config_fields": [
+        "xquant_group_size",
+        "xquant_base_bits",
+        "xquant_residual_bits",
+        "xquant_group_quant_size",
+        "xquant_max_ctx"
+      ],
+      "field_schema": [
+        {
+          "name": "xquant_group_size",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "xquant_base_bits",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "xquant_residual_bits",
+          "type": "int",
+          "default": 4,
+          "optional": false,
+          "help": "Bits for the reuse layer's residual vs. the anchor's codes. Default 4: 0 (pure reuse) assumes adjacent layers are highly correlated, which often does not hold on real models and can produce incoherent output even at high base_bits \u2014 only drop below 4 if you've confirmed strong cross-layer correlation for your model (see VeloxQuant-MLX#380)."
+        },
+        {
+          "name": "xquant_group_quant_size",
+          "type": "int",
+          "default": 32,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "xquant_max_ctx",
+          "type": "int",
+          "default": 8192,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "keys_and_values",
+      "coverage_label": "full estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": null,
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": [
+          2,
+          4
+        ],
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": false,
+        "has_metal_kernel": false,
+        "compresses_keys": true,
+        "compresses_values": true,
+        "uses_eviction": false,
+        "uses_merging": true,
+        "tunable_parameters": {
+          "xquant_group_size": "int",
+          "xquant_base_bits": "int",
+          "xquant_residual_bits": "int",
+          "xquant_group_quant_size": "int",
+          "xquant_max_ctx": "int"
+        }
+      }
+    },
+    {
+      "name": "zipcache",
+      "family": "hybrid",
+      "serve_tier": "accounting_only",
+      "serve_tier_label": "available",
+      "maturity": "beta",
+      "is_servable": true,
+      "blurb": "ZipCache: saliency-weighted mixed-precision compression.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed",
+        "zipcache_group_size",
+        "zipcache_hi_bits",
+        "zipcache_hi_fraction",
+        "zipcache_lo_bits",
+        "zipcache_quantize_values"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        },
+        {
+          "name": "zipcache_group_size",
+          "type": "int",
+          "default": 32,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "zipcache_hi_bits",
+          "type": "int",
+          "default": 4,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "zipcache_hi_fraction",
+          "type": "float",
+          "default": 0.2,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "zipcache_lo_bits",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": null
+        },
+        {
+          "name": "zipcache_quantize_values",
+          "type": "bool",
+          "default": true,
+          "optional": false,
+          "help": null
+        }
+      ],
+      "coverage": "keys_and_values",
+      "coverage_label": "full estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": null,
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": [
+          2,
+          4
+        ],
+        "requires_calibration": false,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": false,
+        "has_metal_kernel": false,
+        "compresses_keys": true,
+        "compresses_values": false,
+        "uses_eviction": true,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int",
+          "zipcache_group_size": "int",
+          "zipcache_hi_bits": "int",
+          "zipcache_hi_fraction": "float",
+          "zipcache_lo_bits": "int",
+          "zipcache_quantize_values": "bool"
+        }
+      }
+    },
+    {
+      "name": "polar",
+      "family": "quantization",
+      "serve_tier": "crashes",
+      "serve_tier_label": "not available yet",
+      "maturity": "experimental",
+      "is_servable": false,
+      "blurb": "PolarQuant: polar-coordinate encoding of key vectors.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        }
+      ],
+      "coverage": "none",
+      "coverage_label": "no estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": "PolarQuantKVCache does not subclass mlx_lm KVCache, so it inherits neither update_and_fetch nor is_trimmable; mlx_lm.server raises AttributeError on the first request. Needs an adapter (#27).",
+      "docs_url": "https://veloxquant-mlx.netlify.app/docs/algorithms/polarquant",
+      "capabilities": {
+        "supported_bits": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "requires_calibration": true,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": false,
+        "has_metal_kernel": false,
+        "compresses_keys": true,
+        "compresses_values": false,
+        "uses_eviction": false,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int"
+        }
+      }
+    },
+    {
+      "name": "qjl",
+      "family": "quantization",
+      "serve_tier": "crashes",
+      "serve_tier_label": "not available yet",
+      "maturity": "experimental",
+      "is_servable": false,
+      "blurb": "QJL: Johnson-Lindenstrauss sketch with 1-bit quantization.",
+      "config_fields": [
+        "jl_dim",
+        "seed"
+      ],
+      "field_schema": [
+        {
+          "name": "jl_dim",
+          "type": "int",
+          "default": null,
+          "optional": true,
+          "help": "Johnson-Lindenstrauss projection dimension."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        }
+      ],
+      "coverage": "none",
+      "coverage_label": "no estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": "QJLKVCache does not subclass mlx_lm KVCache, so it inherits neither update_and_fetch nor is_trimmable; mlx_lm.server raises AttributeError on the first request. Needs an adapter (#27).",
+      "docs_url": "https://veloxquant-mlx.netlify.app/docs/algorithms/qjl",
+      "capabilities": {
+        "supported_bits": [
+          1
+        ],
+        "requires_calibration": true,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": false,
+        "has_metal_kernel": false,
+        "compresses_keys": true,
+        "compresses_values": false,
+        "uses_eviction": false,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "jl_dim": "int",
+          "seed": "int"
+        }
+      }
+    },
+    {
+      "name": "spectral",
+      "family": "quantization",
+      "serve_tier": "crashes",
+      "serve_tier_label": "not available yet",
+      "maturity": "experimental",
+      "is_servable": false,
+      "blurb": "SpectralQuant: spectral-domain transform before quantization.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        }
+      ],
+      "coverage": "none",
+      "coverage_label": "no estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": "SpectralQuantKVCache does not subclass mlx_lm KVCache, so it inherits neither update_and_fetch nor is_trimmable; mlx_lm.server raises AttributeError on the first request. Needs an adapter (#27).",
+      "docs_url": "https://veloxquant-mlx.netlify.app/docs/algorithms/spectral",
+      "capabilities": {
+        "supported_bits": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "requires_calibration": true,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": false,
+        "has_metal_kernel": false,
+        "compresses_keys": true,
+        "compresses_values": false,
+        "uses_eviction": false,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int"
+        }
+      }
+    },
+    {
+      "name": "turboquant_mse",
+      "family": "quantization",
+      "serve_tier": "crashes",
+      "serve_tier_label": "not available yet",
+      "maturity": "experimental",
+      "is_servable": false,
+      "blurb": "TurboQuant variant fitted to minimize MSE rather than inner-product error.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        }
+      ],
+      "coverage": "none",
+      "coverage_label": "no estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": "TurboQuantKVCache does not subclass mlx_lm KVCache, so it inherits neither update_and_fetch nor is_trimmable; mlx_lm.server raises AttributeError on the first request. Needs an adapter (#27).",
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "requires_calibration": true,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": false,
+        "has_metal_kernel": false,
+        "compresses_keys": true,
+        "compresses_values": false,
+        "uses_eviction": false,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int"
+        }
+      }
+    },
+    {
+      "name": "turboquant_prod",
+      "family": "quantization",
+      "serve_tier": "crashes",
+      "serve_tier_label": "not available yet",
+      "maturity": "experimental",
+      "is_servable": false,
+      "blurb": "TurboQuant product quantization; the library default for offline study.",
+      "config_fields": [
+        "bit_width_inlier",
+        "seed"
+      ],
+      "field_schema": [
+        {
+          "name": "bit_width_inlier",
+          "type": "int",
+          "default": 2,
+          "optional": false,
+          "help": "Bits per element for the main quantizer."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 42,
+          "optional": false,
+          "help": "Random seed for rotations / sketches."
+        }
+      ],
+      "coverage": "none",
+      "coverage_label": "no estimate",
+      "paper_deviation": null,
+      "is_adapted": false,
+      "unsupported_reason": "TurboQuantKVCache does not subclass mlx_lm KVCache, so it inherits neither update_and_fetch nor is_trimmable; mlx_lm.server raises AttributeError on the first request. Needs an adapter (#27).",
+      "docs_url": null,
+      "capabilities": {
+        "supported_bits": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "requires_calibration": true,
+        "supports_gqa": true,
+        "supports_mqa": true,
+        "supports_mha": true,
+        "supports_prefill": true,
+        "supports_decode": true,
+        "supports_streaming": false,
+        "has_metal_kernel": false,
+        "compresses_keys": true,
+        "compresses_values": false,
+        "uses_eviction": false,
+        "uses_merging": false,
+        "tunable_parameters": {
+          "bit_width_inlier": "int",
+          "seed": "int"
+        }
+      }
+    }
+  ]
+}

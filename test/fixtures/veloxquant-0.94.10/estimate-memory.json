@@ -1,0 +1,166 @@
+{
+  "model": {
+    "model_id": "unknown",
+    "architecture": "llama",
+    "num_layers": 32,
+    "num_query_heads": 32,
+    "num_kv_heads": 8,
+    "head_dim": 128,
+    "attention_type": "gqa",
+    "dtype": "float16",
+    "parameter_count": null,
+    "hidden_size": 4096
+  },
+  "workload": {
+    "context_length": 4096,
+    "generation_length": 512,
+    "batch_size": 1,
+    "num_concurrent_requests": 1,
+    "objective": "balanced",
+    "max_latency_ms": null
+  },
+  "strategies": {
+    "kvzip": {
+      "method": "kvzip",
+      "baseline_bytes": 603979776,
+      "compressed_bytes": 16908288,
+      "workspace_bytes": 524288,
+      "peak_bytes": 603979776,
+      "resident_bytes": 16908288,
+      "confidence": "high",
+      "reduction_ratio": 0.027994791666666668,
+      "savings_percent": 97.20052083333334,
+      "assumptions": [
+        "eviction cache bounded at 516 tokens instead of 4608 (quality caveat on long generations)",
+        "values quantized to 4-bit \u2014 most methods keep values fp16 by default"
+      ]
+    },
+    "cam": {
+      "method": "cam",
+      "baseline_bytes": 603979776,
+      "compressed_bytes": 67108864,
+      "workspace_bytes": 524288,
+      "peak_bytes": 603979776,
+      "resident_bytes": 67108864,
+      "confidence": "high",
+      "reduction_ratio": 0.1111111111111111,
+      "savings_percent": 88.88888888888889,
+      "assumptions": [
+        "eviction cache bounded at 512 tokens instead of 4608 (quality caveat on long generations)"
+      ]
+    },
+    "chunkkv": {
+      "method": "chunkkv",
+      "baseline_bytes": 603979776,
+      "compressed_bytes": 67108864,
+      "workspace_bytes": 524288,
+      "peak_bytes": 603979776,
+      "resident_bytes": 67108864,
+      "confidence": "high",
+      "reduction_ratio": 0.1111111111111111,
+      "savings_percent": 88.88888888888889,
+      "assumptions": [
+        "eviction cache bounded at 512 tokens instead of 4608 (quality caveat on long generations)"
+      ]
+    },
+    "curdkv": {
+      "method": "curdkv",
+      "baseline_bytes": 603979776,
+      "compressed_bytes": 67108864,
+      "workspace_bytes": 524288,
+      "peak_bytes": 603979776,
+      "resident_bytes": 67108864,
+      "confidence": "high",
+      "reduction_ratio": 0.1111111111111111,
+      "savings_percent": 88.88888888888889,
+      "assumptions": [
+        "eviction cache bounded at 512 tokens instead of 4608 (quality caveat on long generations)"
+      ]
+    },
+    "h2o": {
+      "method": "h2o",
+      "baseline_bytes": 603979776,
+      "compressed_bytes": 67108864,
+      "workspace_bytes": 524288,
+      "peak_bytes": 603979776,
+      "resident_bytes": 67108864,
+      "confidence": "high",
+      "reduction_ratio": 0.1111111111111111,
+      "savings_percent": 88.88888888888889,
+      "assumptions": [
+        "eviction cache bounded at 512 tokens instead of 4608 (quality caveat on long generations)"
+      ]
+    },
+    "keyformer": {
+      "method": "keyformer",
+      "baseline_bytes": 603979776,
+      "compressed_bytes": 67108864,
+      "workspace_bytes": 524288,
+      "peak_bytes": 603979776,
+      "resident_bytes": 67108864,
+      "confidence": "high",
+      "reduction_ratio": 0.1111111111111111,
+      "savings_percent": 88.88888888888889,
+      "assumptions": [
+        "eviction cache bounded at 512 tokens instead of 4608 (quality caveat on long generations)"
+      ]
+    },
+    "knorm": {
+      "method": "knorm",
+      "baseline_bytes": 603979776,
+      "compressed_bytes": 67108864,
+      "workspace_bytes": 524288,
+      "peak_bytes": 603979776,
+      "resident_bytes": 67108864,
+      "confidence": "high",
+      "reduction_ratio": 0.1111111111111111,
+      "savings_percent": 88.88888888888889,
+      "assumptions": [
+        "eviction cache bounded at 512 tokens instead of 4608 (quality caveat on long generations)"
+      ]
+    },
+    "morphkv": {
+      "method": "morphkv",
+      "baseline_bytes": 603979776,
+      "compressed_bytes": 67108864,
+      "workspace_bytes": 524288,
+      "peak_bytes": 603979776,
+      "resident_bytes": 67108864,
+      "confidence": "high",
+      "reduction_ratio": 0.1111111111111111,
+      "savings_percent": 88.88888888888889,
+      "assumptions": [
+        "eviction cache bounded at 512 tokens instead of 4608 (quality caveat on long generations)"
+      ]
+    },
+    "pyramidkv": {
+      "method": "pyramidkv",
+      "baseline_bytes": 603979776,
+      "compressed_bytes": 67108864,
+      "workspace_bytes": 524288,
+      "peak_bytes": 603979776,
+      "resident_bytes": 67108864,
+      "confidence": "high",
+      "reduction_ratio": 0.1111111111111111,
+      "savings_percent": 88.88888888888889,
+      "assumptions": [
+        "eviction cache bounded at 512 tokens instead of 4608 (quality caveat on long generations)"
+      ]
+    },
+    "qfilters": {
+      "method": "qfilters",
+      "baseline_bytes": 603979776,
+      "compressed_bytes": 67108864,
+      "workspace_bytes": 524288,
+      "peak_bytes": 603979776,
+      "resident_bytes": 67108864,
+      "confidence": "high",
+      "reduction_ratio": 0.1111111111111111,
+      "savings_percent": 88.88888888888889,
+      "assumptions": [
+        "eviction cache bounded at 512 tokens instead of 4608 (quality caveat on long generations)"
+      ]
+    }
+  },
+  "empirical": {}
+}

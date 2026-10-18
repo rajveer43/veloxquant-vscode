@@ -1,0 +1,11 @@
+{
+  "chip": "Apple M4",
+  "chip_generation": 4,
+  "total_memory_bytes": 25769803776,
+  "available_memory_bytes": 19069665272,
+  "mlx_version": "0.32.4",
+  "macos_version": "26.6.2",
+  "metal_available": true,
+  "peak_memory_bandwidth_gbps": 90.0,
+  "avg_quantize_latency_ms_per_token": null
+}
