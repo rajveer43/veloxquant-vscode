@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import { resolveInterpreter } from '../python/interpreter';
 import { MIN_WORKER_VERSION, RECOMMENDED_VERSION, classifyVersion } from '../python/versionCheck';
 import { ensureSdkReady } from '../sdk/versionGate';
+import { formatBandwidth } from '../hardware/measureBandwidth';
+import { measureBandwidthWithProgress } from './bandwidthCommand';
 
 interface WorkerCapabilities {
   veloxquantVersion: string;
@@ -36,6 +38,7 @@ export async function runDiagnosticsCommand(): Promise<void> {
       throw new Error(`MLX reports that Metal is unavailable on ${capabilities.device}.`);
     }
     const probe = await worker.metalProbe();
+    const bandwidth = await measureBandwidthWithProgress(resolution.path);
     const compatibility = classifyVersion(capabilities.veloxquantVersion, MIN_WORKER_VERSION);
     const report = [
       '# VeloxQuant-MLX Diagnostics', '',
@@ -47,6 +50,7 @@ export async function runDiagnosticsCommand(): Promise<void> {
       `- Device: \`${capabilities.device}\``,
       `- Metal available: ${capabilities.metalAvailable ? 'yes' : 'no'}`,
       `- Metal probe: ${probe.passed ? 'passed' : 'failed'} (${probe.output.join(', ')})`,
+      `- Memory bandwidth: ${bandwidth ? `\`${formatBandwidth(bandwidth)}\` measured` : 'not measured (needs profile-hardware --measure-bandwidth)'}`,
       `- Worker operations: ${capabilities.supportedOperations.map((operation) => `\`${operation}\``).join(', ')}`,
       '',
     ].join('\n');
