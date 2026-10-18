@@ -105,6 +105,29 @@ export interface MemoryResponse {
 
 const LOOPBACK_HOST = '127.0.0.1';
 
+/**
+ * The panel (veloxquant-mlx >= 0.94, #790) answers 403 `{"error": "host"|"origin"|...}`
+ * for a rebound Host, a cross-origin Origin, or a POST without a JSON content type.
+ */
+export class PanelRefusedError extends Error {
+  constructor(readonly reason: string, readonly path: string) {
+    super(`Panel refused the request to ${path} (${reason} check). Run VeloxQuant-MLX: Run Diagnostics for details.`);
+    this.name = 'PanelRefusedError';
+  }
+}
+
+/** Returns a typed error for the panel's 403 refusal body, or undefined for any other failure. */
+export function parsePanelRefusal(statusCode: number, raw: string, path: string): PanelRefusedError | undefined {
+  if (statusCode !== 403) return undefined;
+  try {
+    const body = JSON.parse(raw) as { error?: unknown };
+    if (body && typeof body.error === 'string') return new PanelRefusedError(body.error, path);
+  } catch {
+    // not the panel's JSON refusal shape
+  }
+  return undefined;
+}
+
 function requestJson<T>(port: number, path: string, options: { method?: string; timeoutMs?: number; body?: unknown } = {}): Promise<T> {
   return new Promise((resolve, reject) => {
     const bodyStr = options.body !== undefined ? JSON.stringify(options.body) : undefined;
@@ -115,9 +138,12 @@ function requestJson<T>(port: number, path: string, options: { method?: string; 
         path,
         method: options.method ?? 'GET',
         timeout: options.timeoutMs ?? 3000,
+        // The panel rejects any POST that is not application/json, including body-less ones like /api/stop.
         headers: bodyStr
           ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyStr) }
-          : undefined,
+          : options.method === 'POST'
+            ? { 'Content-Type': 'application/json', 'Content-Length': 0 }
+            : undefined,
       },
       (res) => {
         const chunks: Buffer[] = [];
@@ -125,6 +151,11 @@ function requestJson<T>(port: number, path: string, options: { method?: string; 
         res.on('end', () => {
           const raw = Buffer.concat(chunks).toString('utf8');
           if (res.statusCode && res.statusCode >= 400) {
+            const refusal = parsePanelRefusal(res.statusCode, raw, path);
+            if (refusal) {
+              reject(refusal);
+              return;
+            }
             reject(new Error(`HTTP ${res.statusCode}: ${raw}`));
             return;
           }

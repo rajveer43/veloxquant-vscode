@@ -3,7 +3,7 @@ import { RecommendSidebarProvider } from './views/recommendSidebarProvider';
 import { PlaygroundPanel } from './views/playgroundPanel';
 import { PlaygroundLauncherProvider } from './views/playgroundLauncherProvider';
 import { PanelServerManager, reapOrphanedPanelProcess } from './server/panelServerManager';
-import { DEFAULT_PANEL_PORT } from './server/panelApiClient';
+import { DEFAULT_PANEL_PORT, PanelRefusedError } from './server/panelApiClient';
 import { StatusBarManager } from './server/statusBarManager';
 import { LogTailManager } from './server/logTailManager';
 import { profileModel } from './server/profileManager';
@@ -93,7 +93,14 @@ export function activate(context: vscode.ExtensionContext): void {
       try {
         await serverManager.client.stop();
       } catch (err) {
-        void vscode.window.showErrorMessage(`Could not stop the VeloxQuant-MLX inference server: ${(err as Error).message}`);
+        const message = `Could not stop the VeloxQuant-MLX inference server: ${(err as Error).message}`;
+        if (err instanceof PanelRefusedError) {
+          void vscode.window.showErrorMessage(message, 'Run Diagnostics').then((choice) => {
+            if (choice) void vscode.commands.executeCommand('veloxquant.runDiagnostics');
+          });
+        } else {
+          void vscode.window.showErrorMessage(message);
+        }
       }
     })
   );
