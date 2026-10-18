@@ -39,6 +39,8 @@ const autoSubmitBtn = document.getElementById('auto-submit-btn') as HTMLButtonEl
 const autoCancelBtn = document.getElementById('auto-cancel-btn') as HTMLButtonElement;
 const memoryBtn = document.getElementById('memory-btn') as HTMLButtonElement;
 const memoryEl = document.getElementById('memory-result') as HTMLDivElement;
+const fitBtn = document.getElementById('fit-btn') as HTMLButtonElement;
+const fitEl = document.getElementById('fit-result') as HTMLDivElement;
 const chipNoteEl = document.getElementById('chip-note') as HTMLDivElement;
 
 interface RulesetMessage {
@@ -93,6 +95,7 @@ function clearOutputs(): void {
   errorEl.hidden = true;
   resultEl.hidden = true;
   memoryEl.hidden = true;
+  fitEl.hidden = true;
 }
 
 document.querySelectorAll('input[name="mode"]').forEach((el) => {
@@ -121,6 +124,7 @@ function readAutoForm(): Record<string, unknown> {
 function setAutoBusy(busy: boolean): void {
   autoSubmitBtn.disabled = busy;
   memoryBtn.disabled = busy;
+  fitBtn.disabled = busy;
   autoCancelBtn.hidden = !busy;
   autoSubmitBtn.textContent = busy ? 'Working…' : 'Get Auto recommendation';
 }
@@ -141,6 +145,32 @@ memoryBtn.addEventListener('click', () => {
   memoryEl.hidden = true;
   vscode.postMessage({ type: 'estimateMemory', values: readAutoForm() });
 });
+
+fitBtn.addEventListener('click', () => {
+  errorEl.hidden = true;
+  fitEl.hidden = true;
+  vscode.postMessage({ type: 'fitDevice', values: readAutoForm() });
+});
+
+function renderFitResult(payload: {
+  result: { method: string; knobs: Record<string, string | number | boolean>; reason: string; freeMemoryBytes: number; fp16KvBytes: number; fitsUncompressed: boolean };
+}): void {
+  const r = payload.result;
+  const knobs = Object.entries(r.knobs).map(([k, v]) => `${escapeHtml(k)}=${escapeHtml(String(v))}`).join(', ');
+  fitEl.innerHTML = `
+    <div class="notice ${r.fitsUncompressed ? '' : 'notice-warning'}">${
+      r.fitsUncompressed
+        ? `Full fp16 KV (${formatBytes(r.fp16KvBytes)}) fits in ${formatBytes(r.freeMemoryBytes)} of free memory; compression is optional here.`
+        : `Does not fit uncompressed: fp16 KV needs ${formatBytes(r.fp16KvBytes)} but only ${formatBytes(r.freeMemoryBytes)} is free. Use the compressed config below, a shorter context, or a smaller model.`
+    }</div>
+    <div><strong>${escapeHtml(r.method)}</strong>${knobs ? ` <span class="estimate-note">${knobs}</span>` : ''}</div>
+    <div class="estimate-note">${escapeHtml(r.reason)}</div>
+    <div class="actions"><button id="fit-insert-btn" type="button">Insert into editor</button></div>`;
+  fitEl.hidden = false;
+  document.getElementById('fit-insert-btn')?.addEventListener('click', () => {
+    vscode.postMessage({ type: 'insert', method: r.method, knobs: r.knobs });
+  });
+}
 
 function formatBytes(n: number): string {
   if (n >= 1024 ** 3) return `${(n / 1024 ** 3).toFixed(2)} GB`;
@@ -474,6 +504,9 @@ window.addEventListener('message', (event: MessageEvent) => {
       break;
     case 'autoResult':
       renderAutoResult(msg as unknown as Parameters<typeof renderAutoResult>[0]);
+      break;
+    case 'fitResult':
+      renderFitResult(msg as unknown as Parameters<typeof renderFitResult>[0]);
       break;
     case 'memoryResult':
       renderMemoryResult(msg as unknown as Parameters<typeof renderMemoryResult>[0]);
