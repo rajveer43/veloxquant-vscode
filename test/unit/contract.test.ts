@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { parseMethods } from '../../src/python/methodsClient';
+import { metalKernelMethods, parseMethods } from '../../src/python/methodsClient';
 import { parseAutoRecommend } from '../../src/python/autoRecommendClient';
 import { parseEstimateMemory } from '../../src/python/estimateMemoryClient';
 import { parseRuleset } from '../../src/python/rulesetClient';
@@ -72,4 +72,8 @@ test('contract: legacy recommend --json keeps the keys the panel reads', () => {
   for (const key of ['key_accounting_ratio', 'kv_fp16_mb', 'kv_compressed_mb_estimate']) {
     assert.equal(typeof rec[key], 'number', `recommendation.${key}`);
   }
+});
+
+test('contract: methods --json reports has_metal_kernel for at least one method', () => {
+  assert.ok(metalKernelMethods(parseMethods(read('methods.json')).methods).length > 0);
 });
