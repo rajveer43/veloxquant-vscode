@@ -281,12 +281,20 @@ ${body}
     }
     if (!(await this.ensureFeature(interpreterPath, 'estimate-memory'))) return;
     try {
-      const result = await getMemoryEstimate(interpreterPath, { modelConfigPath: raw.modelConfigPath, context: raw.context, top: 5 });
+      const result = await getMemoryEstimate(interpreterPath, { modelConfigPath: raw.modelConfigPath, context: raw.context, top: 5 }, (method) =>
+        this.estimateLog().appendLine(`estimate-memory: dropped malformed strategy entry "${method}"`)
+      );
       this.post({ type: 'memoryResult', result });
     } catch (err) {
       const e = err as Partial<EstimateMemoryError>;
       this.post({ type: 'error', kind: 'cli-failed', message: (err as Error).message, stderr: e.stderr ?? '' });
     }
+  }
+
+  private estimateOutput?: vscode.OutputChannel;
+
+  private estimateLog(): vscode.OutputChannel {
+    return (this.estimateOutput ??= vscode.window.createOutputChannel('VeloxQuant-MLX Estimate'));
   }
 
   private handleInfer(): void {
