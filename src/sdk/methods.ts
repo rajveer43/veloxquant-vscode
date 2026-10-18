@@ -57,3 +57,24 @@ export async function listServableMethods(): Promise<ServableMethod[]> {
     isVersionSupported
   );
 }
+
+const MATURITY_ORDER = ['stable', 'beta', 'experimental'];
+
+/**
+ * Orders methods stable-first and, unless `showExperimental`, drops the
+ * experimental ones. Methods without `maturity` (SDK fallback on older
+ * installs) are never hidden and rank with stable, keeping their original order.
+ */
+export function arrangeForPicker<T extends Pick<ServableMethod, 'maturity'>>(methods: T[], showExperimental: boolean): T[] {
+  const visible = showExperimental ? methods : methods.filter((method) => method.maturity !== 'experimental');
+  const rank = (method: T) => (method.maturity ? MATURITY_ORDER.indexOf(method.maturity) : 0);
+  return visible
+    .map((method, index) => ({ method, index }))
+    .sort((a, b) => rank(a.method) - rank(b.method) || a.index - b.index)
+    .map(({ method }) => method);
+}
+
+/** Badge text for picker rows; undefined when the library did not report maturity. */
+export function maturityBadge(method: Pick<ServableMethod, 'maturity'>): string | undefined {
+  return method.maturity;
+}

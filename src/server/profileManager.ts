@@ -2,7 +2,8 @@ import { spawn } from 'node:child_process';
 import * as vscode from 'vscode';
 import { resolveInterpreter } from '../python/interpreter';
 import { listLocal } from '../sdk/localModels';
-import { listServableMethods } from '../sdk/methods';
+import { listPickerMethods } from '../sdk/methodPicker';
+import { maturityBadge } from '../sdk/methods';
 import { ensureSdkReady } from '../sdk/versionGate';
 import { formatBytes } from './format';
 import { buildProfileArgv, parseProfilePayload } from './profileProtocol';
@@ -119,9 +120,9 @@ export async function profileModel(isAnotherModelActive: () => Promise<boolean>)
   const modelId = selectedModel?.trim();
   if (!modelId) return;
 
-  let methods: Awaited<ReturnType<typeof listServableMethods>>;
+  let methods: Awaited<ReturnType<typeof listPickerMethods>>;
   try {
-    methods = await listServableMethods();
+    methods = await listPickerMethods();
   } catch (error) {
     void vscode.window.showErrorMessage(`VeloxQuant-MLX: could not discover profiling methods: ${(error as Error).message}`);
     return;
@@ -131,7 +132,7 @@ export async function profileModel(isAnotherModelActive: () => Promise<boolean>)
     return;
   }
   const method = await vscode.window.showQuickPick(
-    methods.map((item) => ({ label: item.name, description: item.family, detail: item.blurb })),
+    methods.map((item) => ({ label: item.name, description: maturityBadge(item) ? `${item.family} · ${maturityBadge(item)}` : item.family, detail: item.blurb })),
     { placeHolder: 'Servable compression method' }
   );
   if (!method) return;

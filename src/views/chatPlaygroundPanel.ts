@@ -14,7 +14,7 @@ import { ChatSession } from '../sdk/chatSession';
 import { registerEditorTools } from '../sdk/editorTools';
 import { ensureSdkReady } from '../sdk/versionGate';
 import { listLocal } from '../sdk/localModels';
-import { listServableMethods } from '../sdk/methods';
+import { listPickerMethods } from '../sdk/methodPicker';
 import { ChatRequestCoordinator } from '../sdk/chatRequestState';
 import type { LocalModelsProvider } from './localModelsProvider';
 
@@ -106,10 +106,10 @@ export class ChatPlaygroundPanel {
 
   private async sendMethodList(): Promise<void> {
     try {
-      const methods = await listServableMethods();
+      const methods = await listPickerMethods();
       this.post({
         type: 'methods',
-        methods: methods.map((method) => ({ name: method.name, family: method.family, blurb: method.blurb })),
+        methods: methods.map((method) => ({ name: method.name, family: method.family, blurb: method.blurb, maturity: method.maturity })),
       });
     } catch {
       this.post({ type: 'methods', methods: [] });
