@@ -8,6 +8,7 @@
  */
 import * as vscode from 'vscode';
 import { PanelServerManager } from './panelServerManager';
+import { isQFiltersLowRetentionWarning } from './serverLogWarnings';
 
 const POLL_INTERVAL_MS = 2000;
 const IDLE_CHECK_INTERVAL_MS = 10000;
@@ -23,6 +24,7 @@ export class LogTailManager implements vscode.Disposable {
   private timer: ReturnType<typeof setTimeout> | undefined;
   private since = 0;
   private wasActive = false;
+  private lowRetentionToastShown = false;
   private readonly getManager: () => PanelServerManager | undefined;
 
   constructor(getManager: () => PanelServerManager | undefined) {
@@ -59,6 +61,7 @@ export class LogTailManager implements vscode.Disposable {
       // (caught above) can't suppress the reset on the next successful poll.
       if (isActive && !this.wasActive) {
         this.since = 0;
+        this.lowRetentionToastShown = false;
       }
       this.wasActive = isActive;
 
@@ -66,6 +69,15 @@ export class LogTailManager implements vscode.Disposable {
         const { lines } = await manager.client.getLogs(this.since);
         for (const raw of lines as LogLine[]) {
           this.outputChannel.appendLine(`[${raw.stream}] ${raw.text}`);
+          if (!this.lowRetentionToastShown && isQFiltersLowRetentionWarning(raw.text)) {
+            this.lowRetentionToastShown = true;
+            void vscode.window.showWarningMessage(
+              'QFilters is keeping too few tokens, which can degrade output into repeated text. Raise qfilters_budget or pick another method.',
+              'Show Log'
+            ).then((choice) => {
+              if (choice === 'Show Log') this.outputChannel.show(true);
+            });
+          }
         }
         this.since += lines.length;
       }
