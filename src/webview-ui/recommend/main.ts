@@ -3,6 +3,8 @@
  * context (no Node, no direct VS Code API) and talks to the extension host
  * exclusively via postMessage.
  */
+import { mergeKnobEdits, parseKnobInput } from '../../insert/knobEdits';
+import type { EditableField } from '../../insert/knobEdits';
 
 // Minimal ambient declaration for the VS Code webview API injected at
 // runtime; avoids depending on @types/vscode-webview just for this.
@@ -333,6 +335,29 @@ function escapeHtml(s: string): string {
   return div.innerHTML;
 }
 
+type KnobValue = string | number | boolean;
+
+function knobInput(f: EditableField, recommended: Record<string, KnobValue>): string {
+  const value = f.name in recommended ? recommended[f.name] : f.default;
+  const id = `knob-${escapeHtml(f.name)}`;
+  const title = f.help ? ` title="${escapeHtml(f.help)}"` : '';
+  const control = f.type === 'bool'
+    ? `<select id="${id}" data-knob="${escapeHtml(f.name)}"><option value="true"${value === true ? ' selected' : ''}>true</option><option value="false"${value === true ? '' : ' selected'}>false</option></select>`
+    : `<input id="${id}" data-knob="${escapeHtml(f.name)}" type="${f.type === 'str' ? 'text' : 'number'}"${f.type === 'float' ? ' step="any"' : ''} value="${escapeHtml(value === null || value === undefined ? '' : String(value))}" />`;
+  return `<div class="field"${title}><label for="${id}">${escapeHtml(f.name)}</label>${control}${f.help ? `<div class="estimate-note">${escapeHtml(f.help)}</div>` : ''}</div>`;
+}
+
+/** Recommended knobs plus any edited inputs (see mergeKnobEdits for which edits are kept). */
+function collectKnobs(recommended: Record<string, KnobValue>, fields: EditableField[]): Record<string, KnobValue> {
+  const edits: Record<string, KnobValue> = {};
+  for (const f of fields) {
+    const el = document.getElementById(`knob-${f.name}`) as HTMLInputElement | HTMLSelectElement | null;
+    const parsed = el ? parseKnobInput(f.type, el.value) : undefined;
+    if (parsed !== undefined) edits[f.name] = parsed;
+  }
+  return mergeKnobEdits(recommended, edits, fields);
+}
+
 function renderResult(payload: {
   response: {
     recommendation: {
@@ -347,6 +372,7 @@ function renderResult(payload: {
     };
   };
   docsUrl?: string;
+  fieldSchema?: EditableField[];
 }): void {
   submitBtn.disabled = false;
   submitBtn.textContent = 'Get recommendation';
@@ -362,6 +388,7 @@ function renderResult(payload: {
     : 'Accounting only — RAM usage likely unchanged';
 
   const knobEntries = Object.entries(rec.knobs);
+  const fields = payload.fieldSchema ?? [];
 
   resultEl.innerHTML = `
     <div class="method-heading">${heading}</div>
@@ -379,6 +406,11 @@ function renderResult(payload: {
         ? `<ul class="warnings">${rec.warnings.map((w) => `<li>${escapeHtml(w)}</li>`).join('')}</ul>`
         : ''
     }
+    ${
+      fields.length
+        ? `<details class="knob-editor"><summary>Edit settings</summary>${fields.map((f) => knobInput(f, rec.knobs)).join('')}</details>`
+        : ''
+    }
     <div class="rationale">${escapeHtml(rec.rationale)}</div>
     <div class="before-after">
       <div><span class="value">${rec.kv_fp16_mb} MB</span><br />fp16</div>
@@ -389,12 +421,16 @@ function renderResult(payload: {
     <div class="actions">
       <button id="insert-btn" type="button">Insert into editor</button>
       <button id="copy-cmd-btn" type="button" class="secondary">Copy CLI command</button>
+      <button id="profile-btn" type="button" class="secondary">Profile with these settings</button>
     </div>
   `;
   resultEl.hidden = false;
 
   document.getElementById('insert-btn')?.addEventListener('click', () => {
-    vscode.postMessage({ type: 'insert', method: rec.method, knobs: rec.knobs });
+    vscode.postMessage({ type: 'insert', method: rec.method, knobs: collectKnobs(rec.knobs, fields) });
+  });
+  document.getElementById('profile-btn')?.addEventListener('click', () => {
+    vscode.postMessage({ type: 'profileWith', method: rec.method, knobs: collectKnobs(rec.knobs, fields) });
   });
   document.getElementById('copy-cmd-btn')?.addEventListener('click', () => {
     vscode.postMessage({ type: 'copyCommand' });

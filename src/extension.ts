@@ -7,6 +7,7 @@ import { DEFAULT_PANEL_PORT, PanelRefusedError } from './server/panelApiClient';
 import { StatusBarManager } from './server/statusBarManager';
 import { LogTailManager } from './server/logTailManager';
 import { profileModel } from './server/profileManager';
+import type { ProfilePreset } from './server/profileManager';
 import { resolveInterpreter, promptSelectInterpreter } from './python/interpreter';
 import { LocalModelsProvider, pullModelCommand, deleteModelCommand } from './views/localModelsProvider';
 import { ChatPlaygroundPanel } from './views/chatPlaygroundPanel';
@@ -111,7 +112,7 @@ export function activate(context: vscode.ExtensionContext): void {
       await runProfileModel();
     })
   );
-  context.subscriptions.push(vscode.commands.registerCommand('veloxquant.profileModel', runProfileModel));
+  context.subscriptions.push(vscode.commands.registerCommand('veloxquant.profileModel', (preset?: ProfilePreset) => runProfileModel(preset)));
   context.subscriptions.push(vscode.commands.registerCommand('veloxquant.runDiagnostics', runDiagnosticsCommand));
   context.subscriptions.push(vscode.commands.registerCommand('veloxquant.measureBandwidth', measureBandwidthCommand));
 
@@ -159,12 +160,12 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 }
 
-async function runProfileModel(): Promise<void> {
+async function runProfileModel(preset?: ProfilePreset): Promise<void> {
   await profileModel(async () => {
     if (ChatPlaygroundPanel.hasLoadedModel()) return true;
     const state = await serverManager?.getInferenceServerState();
     return state === 'starting' || state === 'running';
-  });
+  }, preset);
 }
 
 /**
