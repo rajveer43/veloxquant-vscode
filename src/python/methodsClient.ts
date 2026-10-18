@@ -36,6 +36,8 @@ export interface CliMethodInfo {
   isAdapted: boolean;
   unsupportedReason: string | null;
   docsUrl: string | null;
+  /** `capabilities.has_metal_kernel`; undefined when the library does not report capabilities. */
+  hasMetalKernel?: boolean;
 }
 
 export interface CliMethodsResult {
@@ -103,7 +105,15 @@ function parseMethod(value: unknown): CliMethodInfo | undefined {
     isAdapted: m.is_adapted,
     unsupportedReason: m.unsupported_reason,
     docsUrl: m.docs_url,
+    hasMetalKernel: isObject(m.capabilities) && typeof m.capabilities.has_metal_kernel === 'boolean'
+      ? m.capabilities.has_metal_kernel
+      : undefined,
   };
+}
+
+/** Names of the methods that ship a Metal kernel, in registry order. */
+export function metalKernelMethods(methods: readonly CliMethodInfo[]): string[] {
+  return methods.filter((m) => m.hasMetalKernel === true).map((m) => m.name);
 }
 
 /** Parses `methods --json` stdout. Throws MethodsError('parse-failed') on a wrong schema_version or any malformed entry. */

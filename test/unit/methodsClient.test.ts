@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildMethodsArgv, parseMethods, MethodsError } from '../../src/python/methodsClient';
+import { buildMethodsArgv, metalKernelMethods, parseMethods, MethodsError } from '../../src/python/methodsClient';
 import { discoverServableMethods } from '../../src/sdk/methods';
 import { isVersionSupported } from '../../src/python/versionCheck';
 
@@ -51,4 +51,14 @@ test('discoverServableMethods: uses the CLI on a current install', async () => {
 test('discoverServableMethods: falls back to the SDK on old installs or CLI failure', async () => {
   assert.equal((await discoverServableMethods(deps('0.91.0'), '0.93.0', isVersionSupported))[0].name, 'sdk');
   assert.equal((await discoverServableMethods(deps('0.94.10', true), '0.93.0', isVersionSupported))[0].name, 'sdk');
+});
+
+test('parseMethods: reads capabilities.has_metal_kernel and lists Metal methods', () => {
+  const r = parseMethods(payload([
+    entry('kivi', { capabilities: { has_metal_kernel: true } }),
+    entry('h2o', { capabilities: { has_metal_kernel: false } }),
+    entry('tova'),
+  ]));
+  assert.deepEqual(r.methods.map((m) => m.hasMetalKernel), [true, false, undefined]);
+  assert.deepEqual(metalKernelMethods(r.methods), ['kivi']);
 });

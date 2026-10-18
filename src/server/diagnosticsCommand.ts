@@ -3,6 +3,7 @@ import { resolveInterpreter } from '../python/interpreter';
 import { MIN_WORKER_VERSION, RECOMMENDED_VERSION, classifyVersion } from '../python/versionCheck';
 import { ensureSdkReady } from '../sdk/versionGate';
 import { formatBandwidth } from '../hardware/measureBandwidth';
+import { getMethods, metalKernelMethods } from '../python/methodsClient';
 import { measureBandwidthWithProgress } from './bandwidthCommand';
 
 interface WorkerCapabilities {
@@ -17,6 +18,15 @@ interface WorkerHandle {
   capabilities(): Promise<WorkerCapabilities>;
   metalProbe(): Promise<{ device: string; output: number[]; passed: boolean }>;
   close(): Promise<void>;
+}
+
+async function getMetalKernelMethods(interpreterPath: string): Promise<string[] | undefined> {
+  try {
+    const { methods } = await getMethods(interpreterPath);
+    return methods.some((m) => m.hasMetalKernel !== undefined) ? metalKernelMethods(methods) : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 export async function runDiagnosticsCommand(): Promise<void> {
@@ -39,6 +49,7 @@ export async function runDiagnosticsCommand(): Promise<void> {
     }
     const probe = await worker.metalProbe();
     const bandwidth = await measureBandwidthWithProgress(resolution.path);
+    const metalMethods = await getMetalKernelMethods(resolution.path);
     const compatibility = classifyVersion(capabilities.veloxquantVersion, MIN_WORKER_VERSION);
     const report = [
       '# VeloxQuant-MLX Diagnostics', '',
@@ -51,6 +62,7 @@ export async function runDiagnosticsCommand(): Promise<void> {
       `- Metal available: ${capabilities.metalAvailable ? 'yes' : 'no'}`,
       `- Metal probe: ${probe.passed ? 'passed' : 'failed'} (${probe.output.join(', ')})`,
       `- Memory bandwidth: ${bandwidth ? `\`${formatBandwidth(bandwidth)}\` measured` : 'not measured (needs profile-hardware --measure-bandwidth)'}`,
+      `- Methods with Metal kernels: ${metalMethods ? (metalMethods.length > 0 ? metalMethods.map((name) => `\`${name}\``).join(', ') : 'none') : 'not reported (needs veloxquant-mlx >= 0.93.0)'}`,
       `- Worker operations: ${capabilities.supportedOperations.map((operation) => `\`${operation}\``).join(', ')}`,
       '',
     ].join('\n');
