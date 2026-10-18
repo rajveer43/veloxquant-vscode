@@ -57,7 +57,7 @@ test('detectHardware: non-Apple brand string yields no chip', async () => {
   assert.equal(hw.chip, undefined);
 });
 
-// Captured from `python -m veloxquant_mlx profile-hardware --json` at 0.92.2.
+// Captured from `python -m veloxquant_mlx profile-hardware --json` at 0.92.2 (schema unchanged through 0.94.x).
 const PROFILE_FIXTURE = JSON.stringify({
   chip: 'Apple M4',
   chip_generation: 4,

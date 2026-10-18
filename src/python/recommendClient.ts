@@ -7,7 +7,7 @@
  */
 import { execFile } from 'node:child_process';
 
-/** Chips accepted by `recommend --chip` (veloxquant-mlx 0.92.2). Newer chips are mapped to the nearest one in hardware/chips.ts. */
+/** Chips accepted by `recommend --chip` (veloxquant-mlx 0.94.x). Newer chips are mapped to the nearest one in hardware/chips.ts. */
 export type Chip = 'M1' | 'M2' | 'M3' | 'M4';
 export type RamGb = 8 | 16 | 24 | 32 | 36 | 48 | 64 | 96 | 128 | 192 | 512;
 export type ModelClass = '1B' | '3B' | '7B' | '14B' | '32B' | '70B' | '120B' | '235B' | '671B';
