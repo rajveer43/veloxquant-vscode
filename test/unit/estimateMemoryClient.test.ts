@@ -36,6 +36,21 @@ test('parseEstimateMemory: parses valid strategies and drops malformed ones', ()
   });
 });
 
+test('parseEstimateMemory: reports each dropped entry', () => {
+  const dropped: string[] = [];
+  parseEstimateMemory(fixture, (m) => dropped.push(m));
+  assert.deepEqual(dropped, ['broken']);
+});
+
+test('parseEstimateMemory: throws parse-failed when every entry is invalid', () => {
+  const allBad = JSON.stringify({ strategies: { a: { baseline_bytes: 'x' }, b: null, c: 5 } });
+  assert.throws(() => parseEstimateMemory(allBad), { kind: 'parse-failed', message: /schema mismatch/ });
+});
+
+test('parseEstimateMemory: an empty strategies object is not a schema mismatch', () => {
+  assert.deepEqual(parseEstimateMemory('{"strategies":{}}').strategies, []);
+});
+
 test('parseEstimateMemory: rejects non-JSON and missing strategies', () => {
   assert.throws(() => parseEstimateMemory('nope'), { kind: 'parse-failed' });
   assert.throws(() => parseEstimateMemory('{"strategies":[]}'), { kind: 'parse-failed' });

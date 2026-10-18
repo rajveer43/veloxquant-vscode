@@ -4,8 +4,9 @@
  * strategy for a model and workload before any weights are loaded.
  *
  * Uses execFile with an argv array — never a shell string. The parser is
- * defensive: unknown or malformed strategy entries are dropped rather than
- * failing the whole response.
+ * defensive: malformed strategy entries are dropped (and reported through
+ * `onDropped`) rather than failing the whole response, but a response whose
+ * entries are all malformed is a schema mismatch and fails as `parse-failed`.
  */
 import { execFile } from 'node:child_process';
 
@@ -69,7 +70,7 @@ function num(value: unknown): number | undefined {
 }
 
 /** Parses `estimate-memory --json` stdout. Throws EstimateMemoryError('parse-failed') if it is not the expected shape. */
-export function parseEstimateMemory(stdout: string): EstimateMemoryResult {
+export function parseEstimateMemory(stdout: string, onDropped?: (method: string) => void): EstimateMemoryResult {
   let raw: unknown;
   try {
     raw = JSON.parse(stdout);
@@ -89,6 +90,7 @@ export function parseEstimateMemory(stdout: string): EstimateMemoryResult {
     const residentBytes = num(e?.resident_bytes);
     const savingsPercent = num(e?.savings_percent);
     if (baselineBytes === undefined || compressedBytes === undefined || residentBytes === undefined || savingsPercent === undefined) {
+      onDropped?.(method);
       continue;
     }
     strategies.push({
@@ -100,6 +102,14 @@ export function parseEstimateMemory(stdout: string): EstimateMemoryResult {
       confidence: typeof e?.confidence === 'string' ? e.confidence : undefined,
       assumptions: Array.isArray(e?.assumptions) ? e.assumptions.filter((a): a is string => typeof a === 'string') : [],
     });
+  }
+  const total = Object.keys(strategiesRaw).length;
+  if (total > 0 && strategies.length === 0) {
+    throw new EstimateMemoryError(
+      'parse-failed',
+      `Estimate unavailable: schema mismatch (all ${total} strategy entries were malformed). Check the backend package version.`,
+      ''
+    );
   }
   const obj = raw as { model?: unknown; workload?: unknown };
   return { model: obj.model, workload: obj.workload, strategies };
@@ -122,7 +132,11 @@ function execFileAsync(
   });
 }
 
-export async function getMemoryEstimate(interpreterPath: string, input: EstimateMemoryInput): Promise<EstimateMemoryResult> {
+export async function getMemoryEstimate(
+  interpreterPath: string,
+  input: EstimateMemoryInput,
+  onDropped?: (method: string) => void
+): Promise<EstimateMemoryResult> {
   const argv = buildEstimateMemoryArgv(input);
   let result: { stdout: string; stderr: string; code: number };
   try {
@@ -140,6 +154,6 @@ export async function getMemoryEstimate(interpreterPath: string, input: Estimate
     }
     throw new EstimateMemoryError('non-zero-exit', `veloxquant_mlx estimate-memory exited with code ${code}.`, stderr);
   }
-  const parsed = parseEstimateMemory(stdout);
+  const parsed = parseEstimateMemory(stdout, onDropped);
   return parsed;
 }
