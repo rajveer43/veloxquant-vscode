@@ -46,7 +46,9 @@
     "onCommand:veloxquant.benchmarkModel",
     "onCommand:veloxquant.profileModel",
     "onCommand:veloxquant.runDiagnostics",
-    "onCommand:veloxquant.measureBandwidth"
+    "onCommand:veloxquant.measureBandwidth",
+    "onCommand:veloxquant.startVlmServer",
+    "onCommand:veloxquant.stopVlmServer"
   ],
   "contributes": {
     "viewsContainers": {
@@ -96,6 +98,16 @@
       {
         "command": "veloxquant.refreshRecommend",
         "title": "VeloxQuant-MLX: Refresh Recommendation Form",
+        "category": "VeloxQuant-MLX"
+      },
+      {
+        "command": "veloxquant.startVlmServer",
+        "title": "VeloxQuant-MLX: Start VLM Server",
+        "category": "VeloxQuant-MLX"
+      },
+      {
+        "command": "veloxquant.stopVlmServer",
+        "title": "VeloxQuant-MLX: Stop VLM Server",
         "category": "VeloxQuant-MLX"
       },
       {
@@ -189,6 +201,13 @@
           "minimum": 1024,
           "maximum": 65535,
           "description": "Port for the local VeloxQuant-MLX control panel server (loopback only, not configurable to any other host)."
+        },
+        "veloxquant.vlmPort": {
+          "type": "integer",
+          "default": 8080,
+          "minimum": 1024,
+          "maximum": 65535,
+          "description": "Port for 'Start VLM Server' (veloxquant vlm-serve). Bound to loopback only."
         },
         "veloxquant.benchmarkDir": {
           "type": "string",
