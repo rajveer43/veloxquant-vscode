@@ -33,6 +33,7 @@ test('parseEstimateMemory: parses valid strategies and drops malformed ones', ()
   assert.deepEqual(r.strategies[0], {
     method: 'turboquant', baselineBytes: 1000, compressedBytes: 250, residentBytes: 400,
     savingsPercent: 60, confidence: 'high', assumptions: ['fp16 baseline'],
+    peakBytes: undefined, workspaceBytes: undefined, reductionRatio: undefined, source: 'estimated', measured: undefined,
   });
 });
 
@@ -54,4 +55,49 @@ test('parseEstimateMemory: an empty strategies object is not a schema mismatch',
 test('parseEstimateMemory: rejects non-JSON and missing strategies', () => {
   assert.throws(() => parseEstimateMemory('nope'), { kind: 'parse-failed' });
   assert.throws(() => parseEstimateMemory('{"strategies":[]}'), { kind: 'parse-failed' });
+});
+
+test('buildEstimateMemoryArgv: passes --benchmark-dir before --json', () => {
+  const argv = buildEstimateMemoryArgv({ modelConfigPath: '/c.json', context: 4096, benchmarkDir: '/my bench' });
+  assert.deepEqual(argv.slice(-3), ['--benchmark-dir', '/my bench', '--json']);
+});
+
+test('parseEstimateMemory: tags a method with a matching empirical record as measured', () => {
+  const r = parseEstimateMemory(JSON.stringify({
+    strategies: {
+      kivi: { baseline_bytes: 10, compressed_bytes: 5, resident_bytes: 6, savings_percent: 50, peak_bytes: 9, workspace_bytes: 1, reduction_ratio: 2 },
+      polar: { baseline_bytes: 10, compressed_bytes: 5, resident_bytes: 6, savings_percent: 50 },
+    },
+    empirical: { kivi: { memory_bytes: 4, memory_reduction: 0.4, throughput_tok_s: 50, chip: 'M4' } },
+  }));
+  const [kivi, polar] = r.strategies;
+  assert.equal(kivi.source, 'measured');
+  assert.deepEqual(kivi.measured, { memoryBytes: 4, memoryReduction: 0.4, throughputTokS: 50, latencyMsPerToken: undefined, perplexityDelta: undefined, chip: 'M4' });
+  assert.equal(kivi.peakBytes, 9);
+  assert.equal(kivi.reductionRatio, 2);
+  assert.equal(polar.source, 'estimated');
+  assert.equal(polar.measured, undefined);
+});
+
+test('buildEstimateMemoryArgv: passes --benchmark-dir before --json', () => {
+  const argv = buildEstimateMemoryArgv({ modelConfigPath: '/c.json', context: 4096, benchmarkDir: '/my bench' });
+  assert.deepEqual(argv.slice(-3), ['--benchmark-dir', '/my bench', '--json']);
+});
+
+test('parseEstimateMemory: tags a method with a matching empirical record as measured', () => {
+  const r = parseEstimateMemory(JSON.stringify({
+    strategies: {
+      kivi: { baseline_bytes: 10, compressed_bytes: 5, resident_bytes: 6, savings_percent: 50, peak_bytes: 9, workspace_bytes: 1, reduction_ratio: 2 },
+      polar: { baseline_bytes: 10, compressed_bytes: 5, resident_bytes: 6, savings_percent: 50 },
+    },
+    empirical: { kivi: { memory_bytes: 4, memory_reduction: 0.4, throughput_tok_s: 50, chip: 'M4' } },
+  }));
+  const [kivi, polar] = r.strategies;
+  assert.equal(kivi.source, 'measured');
+  assert.equal(kivi.measured?.memoryBytes, 4);
+  assert.equal(kivi.measured?.chip, 'M4');
+  assert.equal(kivi.peakBytes, 9);
+  assert.equal(kivi.reductionRatio, 2);
+  assert.equal(polar.source, 'estimated');
+  assert.equal(polar.measured, undefined);
 });
