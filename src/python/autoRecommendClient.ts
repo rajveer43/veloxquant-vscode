@@ -6,6 +6,7 @@
  * because `--auto` can be slow on first run (hardware probe).
  */
 import { execFile } from 'node:child_process';
+import { MIN_AUTO_VERSION } from './versionCheck';
 
 export type AutoObjective = 'memory' | 'latency' | 'throughput' | 'quality' | 'balanced';
 export const AUTO_OBJECTIVES: readonly AutoObjective[] = ['memory', 'latency', 'throughput', 'quality', 'balanced'];
@@ -181,7 +182,7 @@ async function runAuto(
       throw new AutoRecommendError('module-not-found', 'VeloxQuant-MLX is not installed in this interpreter.', result.stderr);
     }
     if (/unrecognized arguments|no such option/i.test(result.stderr)) {
-      throw new AutoRecommendError('unsupported-flag', 'The installed VeloxQuant-MLX does not support `recommend --auto` (needs 0.91.0+).', result.stderr);
+      throw new AutoRecommendError('unsupported-flag', 'The installed VeloxQuant-MLX does not support `recommend --auto` (needs ' + MIN_AUTO_VERSION + '+).', result.stderr);
     }
     throw new AutoRecommendError('non-zero-exit', `veloxquant_mlx recommend --auto exited with code ${result.code}.`, result.stderr);
   }
