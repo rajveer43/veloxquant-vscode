@@ -12,6 +12,7 @@ import { LocalModelsProvider, pullModelCommand, deleteModelCommand } from './vie
 import { ChatPlaygroundPanel } from './views/chatPlaygroundPanel';
 import { runBenchmarkCommand } from './server/benchmarkCommand';
 import { runDiagnosticsCommand } from './server/diagnosticsCommand';
+import { measureBandwidthCommand } from './server/bandwidthCommand';
 
 let serverManager: PanelServerManager | undefined;
 let statusBarManager: StatusBarManager | undefined;
@@ -112,6 +113,7 @@ export function activate(context: vscode.ExtensionContext): void {
   );
   context.subscriptions.push(vscode.commands.registerCommand('veloxquant.profileModel', runProfileModel));
   context.subscriptions.push(vscode.commands.registerCommand('veloxquant.runDiagnostics', runDiagnosticsCommand));
+  context.subscriptions.push(vscode.commands.registerCommand('veloxquant.measureBandwidth', measureBandwidthCommand));
 
   const localModelsProvider = new LocalModelsProvider();
   context.subscriptions.push(vscode.window.registerTreeDataProvider(LocalModelsProvider.viewType, localModelsProvider));

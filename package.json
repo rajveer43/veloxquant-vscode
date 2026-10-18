@@ -45,7 +45,8 @@
     "onCommand:veloxquant.openChatPlayground",
     "onCommand:veloxquant.benchmarkModel",
     "onCommand:veloxquant.profileModel",
-    "onCommand:veloxquant.runDiagnostics"
+    "onCommand:veloxquant.runDiagnostics",
+    "onCommand:veloxquant.measureBandwidth"
   ],
   "contributes": {
     "viewsContainers": {
@@ -116,6 +117,11 @@
       {
         "command": "veloxquant.runDiagnostics",
         "title": "VeloxQuant-MLX: Run Diagnostics",
+        "category": "VeloxQuant-MLX"
+      },
+      {
+        "command": "veloxquant.measureBandwidth",
+        "title": "VeloxQuant-MLX: Measure Memory Bandwidth",
         "category": "VeloxQuant-MLX"
       },
       {
