@@ -46,3 +46,35 @@ test('parseAutoRecommend: rejects non-JSON and missing ranked', () => {
   assert.throws(() => parseAutoRecommend('x'), { kind: 'parse-failed' });
   assert.throws(() => parseAutoRecommend('{}'), { kind: 'parse-failed' });
 });
+
+test('parseAutoRecommend: keeps warnings, evidence, objective scores and peak/workspace bytes', () => {
+  const r = parseAutoRecommend(JSON.stringify({
+    objective: 'balanced',
+    fallback_used: true,
+    fallback_reason: 'no viable candidates',
+    ranked: [{
+      method: 'kivi', score: 0.9, warnings: ['x'], evidence: 'hybrid', objective_scores: { memory: 0.8, latency: 'bad' },
+      memory: { baseline_bytes: 10, compressed_bytes: 5, resident_bytes: 6, savings_percent: 50, peak_bytes: 12, workspace_bytes: 2 },
+    }],
+  }));
+  assert.equal(r.fallbackReason, 'no viable candidates');
+  const e = r.ranked[0];
+  assert.deepEqual(e.warnings, ['x']);
+  assert.equal(e.evidence, 'hybrid');
+  assert.deepEqual(e.objectiveScores, { memory: 0.8 });
+  assert.equal(e.memory?.peakBytes, 12);
+  assert.equal(e.memory?.workspaceBytes, 2);
+});
+
+test('parseAutoRecommend: older installs without the new fields degrade to undefined', () => {
+  const r = parseAutoRecommend(JSON.stringify({ ranked: [{ method: 'kivi', score: 1, evidence: 'bogus' }] }));
+  assert.equal(r.fallbackReason, undefined);
+  assert.equal(r.ranked[0].evidence, undefined);
+  assert.equal(r.ranked[0].objectiveScores, undefined);
+});
+
+test('buildAutoArgv: explain mode swaps --json for --explain', () => {
+  const argv = buildAutoArgv({ modelConfigPath: '/c.json' }, 'explain');
+  assert.equal(argv.at(-1), '--explain');
+  assert.ok(!argv.includes('--json'));
+});

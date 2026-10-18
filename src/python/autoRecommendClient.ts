@@ -26,18 +26,29 @@ export interface AutoMemory {
   savingsPercent: number;
   confidence?: string;
   assumptions: string[];
+  peakBytes?: number;
+  workspaceBytes?: number;
 }
+
+/** Where a candidate's numbers came from, as reported by the planner. */
+export type AutoEvidence = 'analytic' | 'empirical' | 'hybrid' | 'fallback';
+const EVIDENCE_VALUES: readonly string[] = ['analytic', 'empirical', 'hybrid', 'fallback'];
 
 export interface AutoRankedEntry {
   method: string;
   score: number;
   memory?: AutoMemory;
   warnings: string[];
+  /** Absent on installs that predate the field. */
+  evidence?: AutoEvidence;
+  objectiveScores?: Record<string, number>;
 }
 
 export interface AutoRecommendResult {
   objective?: string;
   fallbackUsed: boolean;
+  /** Only when the installed package reports why it fell back. */
+  fallbackReason?: string;
   ranked: AutoRankedEntry[];
 }
 
@@ -60,13 +71,13 @@ export class AutoRecommendError extends Error {
   }
 }
 
-export function buildAutoArgv(input: AutoRecommendInput): string[] {
+export function buildAutoArgv(input: AutoRecommendInput, mode: 'json' | 'explain' = 'json'): string[] {
   const argv = ['-m', 'veloxquant_mlx', 'recommend', '--auto', '--model-config', input.modelConfigPath];
   if (input.objective) argv.push('--objective', input.objective);
   if (input.context !== undefined) argv.push('--context', String(input.context));
   if (input.generation !== undefined) argv.push('--generation', String(input.generation));
   if (!input.probe) argv.push('--no-probe');
-  argv.push('--json');
+  argv.push(mode === 'explain' ? '--explain' : '--json');
   return argv;
 }
 
@@ -76,6 +87,16 @@ function finite(value: unknown): number | undefined {
 
 function strings(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
+}
+
+function parseObjectiveScores(raw: unknown): Record<string, number> | undefined {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const scores: Record<string, number> = {};
+  for (const [name, value] of Object.entries(raw)) {
+    const n = finite(value);
+    if (n !== undefined) scores[name] = n;
+  }
+  return Object.keys(scores).length > 0 ? scores : undefined;
 }
 
 export function parseAutoMemory(raw: unknown): AutoMemory | undefined {
@@ -95,6 +116,8 @@ export function parseAutoMemory(raw: unknown): AutoMemory | undefined {
     savingsPercent,
     confidence: typeof m.confidence === 'string' ? m.confidence : undefined,
     assumptions: strings(m.assumptions),
+    peakBytes: finite(m.peak_bytes),
+    workspaceBytes: finite(m.workspace_bytes),
   };
 }
 
@@ -106,7 +129,7 @@ export function parseAutoRecommend(stdout: string): AutoRecommendResult {
   } catch {
     throw new AutoRecommendError('parse-failed', 'Could not parse JSON output from recommend --auto.', '');
   }
-  const o = raw as { ranked?: unknown; objective?: unknown; fallback_used?: unknown } | null;
+  const o = raw as { ranked?: unknown; objective?: unknown; fallback_used?: unknown; fallback_reason?: unknown } | null;
   if (!o || !Array.isArray(o.ranked)) {
     throw new AutoRecommendError('parse-failed', 'recommend --auto output has no "ranked" list.', '');
   }
@@ -119,22 +142,24 @@ export function parseAutoRecommend(stdout: string): AutoRecommendResult {
       score: finite(e.score) ?? 0,
       memory: parseAutoMemory(e.memory),
       warnings: strings(e.warnings),
+      evidence: typeof e.evidence === 'string' && EVIDENCE_VALUES.includes(e.evidence) ? (e.evidence as AutoEvidence) : undefined,
+      objectiveScores: parseObjectiveScores(e.objective_scores),
     });
   }
   return {
     objective: typeof o.objective === 'string' ? o.objective : undefined,
     fallbackUsed: o.fallback_used === true,
+    fallbackReason: typeof o.fallback_reason === 'string' && o.fallback_reason ? o.fallback_reason : undefined,
     ranked,
   };
 }
 
-export async function getAutoRecommendation(
+async function runAuto(
   interpreterPath: string,
-  input: AutoRecommendInput,
-  signal?: AbortSignal,
-  timeoutMs = 180000
-): Promise<AutoRecommendResult> {
-  const argv = buildAutoArgv(input);
+  argv: string[],
+  signal: AbortSignal | undefined,
+  timeoutMs: number
+): Promise<string> {
   const result = await new Promise<{ stdout: string; stderr: string; code: number }>((resolve, reject) => {
     execFile(interpreterPath, argv, { timeout: timeoutMs, maxBuffer: 10 * 1024 * 1024, signal }, (error, stdout, stderr) => {
       const errno = error as (NodeJS.ErrnoException & { name?: string }) | null;
@@ -160,5 +185,24 @@ export async function getAutoRecommendation(
     }
     throw new AutoRecommendError('non-zero-exit', `veloxquant_mlx recommend --auto exited with code ${result.code}.`, result.stderr);
   }
-  return parseAutoRecommend(result.stdout);
+  return result.stdout;
+}
+
+export async function getAutoRecommendation(
+  interpreterPath: string,
+  input: AutoRecommendInput,
+  signal?: AbortSignal,
+  timeoutMs = 180000
+): Promise<AutoRecommendResult> {
+  return parseAutoRecommend(await runAuto(interpreterPath, buildAutoArgv(input), signal, timeoutMs));
+}
+
+/** Runs `recommend --auto ... --explain` and returns the planner's plain-text analysis. */
+export async function explainAutoRecommendation(
+  interpreterPath: string,
+  input: AutoRecommendInput,
+  signal?: AbortSignal,
+  timeoutMs = 180000
+): Promise<string> {
+  return runAuto(interpreterPath, buildAutoArgv(input, 'explain'), signal, timeoutMs);
 }
