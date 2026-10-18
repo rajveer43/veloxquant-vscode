@@ -53,7 +53,8 @@ function defaultSysctl(key: string): Promise<string | undefined> {
  */
 export async function detectHardware(
   sysctl: (key: string) => Promise<string | undefined> = defaultSysctl,
-  profile?: () => Promise<string | undefined>
+  profile?: () => Promise<string | undefined>,
+  knownChips?: readonly string[]
 ): Promise<DetectedHardware> {
   if (process.platform !== 'darwin') {
     return { chip: undefined, ramGb: undefined };
@@ -62,7 +63,7 @@ export async function detectHardware(
   if (profile) {
     try {
       const stdout = await profile();
-      const parsed = stdout ? parseProfileHardware(stdout) : undefined;
+      const parsed = stdout ? parseProfileHardware(stdout, knownChips) : undefined;
       if (parsed && (parsed.chip || parsed.totalMemoryBytes !== undefined)) {
         return {
           chip: parsed.chip?.chip,
@@ -78,7 +79,7 @@ export async function detectHardware(
   try {
     const [brand, memsize] = await Promise.all([sysctl('machdep.cpu.brand_string'), sysctl('hw.memsize')]);
 
-    const mapped = brand && /Apple/.test(brand) ? mapChipName(brand) : undefined;
+    const mapped = brand && /Apple/.test(brand) ? mapChipName(brand, knownChips) : undefined;
 
     let ramGb: DetectedHardware['ramGb'];
     if (memsize) {

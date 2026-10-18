@@ -41,6 +41,50 @@ const memoryBtn = document.getElementById('memory-btn') as HTMLButtonElement;
 const memoryEl = document.getElementById('memory-result') as HTMLDivElement;
 const chipNoteEl = document.getElementById('chip-note') as HTMLDivElement;
 
+interface RulesetMessage {
+  chips: string[];
+  ramGb: number[];
+  modelClasses: string[];
+  goals: string[];
+}
+
+/** Rebuilds a <select>'s options from `values`, reusing existing labels and keeping the current selection when still valid. */
+function rebuildSelect(select: HTMLSelectElement, values: string[]): void {
+  const labels = new Map(Array.from(select.options).map((o) => [o.value, o.textContent ?? o.value]));
+  const current = select.value;
+  select.replaceChildren(
+    ...values.map((value) => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = labels.get(value) ?? value;
+      return option;
+    })
+  );
+  if (values.includes(current)) select.value = current;
+}
+
+/** Replaces the hardcoded form choices with the ones the installed library accepts. */
+function applyRuleset(ruleset: RulesetMessage): void {
+  const group = document.getElementById('chip-group') as HTMLDivElement;
+  const selected = (form.querySelector('input[name="chip"]:checked') as HTMLInputElement | null)?.value;
+  const chosen = ruleset.chips.includes(selected ?? '') ? selected : ruleset.chips[ruleset.chips.length - 1];
+  group.replaceChildren(
+    ...ruleset.chips.map((chip) => {
+      const label = document.createElement('label');
+      const input = document.createElement('input');
+      input.type = 'radio';
+      input.name = 'chip';
+      input.value = chip;
+      input.checked = chip === chosen;
+      label.append(input, ` ${chip}`);
+      return label;
+    })
+  );
+  rebuildSelect(document.getElementById('ram-gb') as HTMLSelectElement, ruleset.ramGb.map(String));
+  rebuildSelect(document.getElementById('model-class') as HTMLSelectElement, ruleset.modelClasses);
+  rebuildSelect(document.getElementById('goal') as HTMLSelectElement, ruleset.goals);
+}
+
 function currentMode(): 'manual' | 'auto' {
   return (document.querySelector('input[name="mode"]:checked') as HTMLInputElement).value === 'auto' ? 'auto' : 'manual';
 }
@@ -413,6 +457,9 @@ window.addEventListener('message', (event: MessageEvent) => {
     case 'platformNotice':
       platformNoticeEl.textContent = msg.message as string;
       platformNoticeEl.hidden = false;
+      break;
+    case 'ruleset':
+      applyRuleset(msg.ruleset as RulesetMessage);
       break;
     case 'prefill': {
       const values = msg.values as Partial<RecommendFormValues>;

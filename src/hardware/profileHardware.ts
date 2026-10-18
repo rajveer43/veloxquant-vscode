@@ -19,7 +19,7 @@ function positiveNumber(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : undefined;
 }
 
-export function parseProfileHardware(stdout: string): HardwareProfile | undefined {
+export function parseProfileHardware(stdout: string, knownChips?: readonly string[]): HardwareProfile | undefined {
   let raw: unknown;
   try {
     raw = JSON.parse(stdout);
@@ -31,8 +31,8 @@ export function parseProfileHardware(stdout: string): HardwareProfile | undefine
 
   const generation = positiveNumber(o.chip_generation);
   const chip =
-    (generation !== undefined ? mapChipGeneration(generation) : undefined) ??
-    (typeof o.chip === 'string' ? mapChipName(o.chip) : undefined);
+    (generation !== undefined ? mapChipGeneration(generation, knownChips) : undefined) ??
+    (typeof o.chip === 'string' ? mapChipName(o.chip, knownChips) : undefined);
   const totalMemoryBytes = positiveNumber(o.total_memory_bytes);
   if (!chip && totalMemoryBytes === undefined) return undefined;
 
