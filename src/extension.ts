@@ -5,6 +5,7 @@ import { PlaygroundLauncherProvider } from './views/playgroundLauncherProvider';
 import { PanelServerManager, reapOrphanedPanelProcess } from './server/panelServerManager';
 import { DEFAULT_PANEL_PORT, PanelRefusedError } from './server/panelApiClient';
 import { StatusBarManager } from './server/statusBarManager';
+import { VlmServerManager } from './server/vlmServerManager';
 import { LogTailManager } from './server/logTailManager';
 import { profileModel } from './server/profileManager';
 import type { ProfilePreset } from './server/profileManager';
@@ -140,6 +141,13 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(
     vscode.commands.registerCommand('veloxquant.benchmarkModel', () => runBenchmarkCommand())
+  );
+
+  const vlmServer = new VlmServerManager();
+  context.subscriptions.push(
+    vlmServer,
+    vscode.commands.registerCommand('veloxquant.startVlmServer', () => vlmServer.start()),
+    vscode.commands.registerCommand('veloxquant.stopVlmServer', () => vlmServer.stop())
   );
 
   statusBarManager = new StatusBarManager(() => serverManager);
