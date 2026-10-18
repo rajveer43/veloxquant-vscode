@@ -155,20 +155,43 @@ interface AutoMemoryPayload {
   savingsPercent: number;
   confidence?: string;
   assumptions: string[];
+  peakBytes?: number;
+  workspaceBytes?: number;
+}
+
+interface AutoRankedPayload {
+  method: string;
+  score: number;
+  memory?: AutoMemoryPayload;
+  warnings: string[];
+  evidence?: string;
+  objectiveScores?: Record<string, number>;
+}
+
+/** Evidence tag, per-objective scores and peak/workspace memory for one ranked entry. */
+function autoDetails(r: AutoRankedPayload): string {
+  const parts: string[] = [];
+  if (r.evidence) parts.push(`evidence: ${escapeHtml(r.evidence)}`);
+  if (r.objectiveScores) {
+    parts.push(`scores: ${Object.entries(r.objectiveScores).map(([k, v]) => `${escapeHtml(k)} ${v.toFixed(2)}`).join(', ')}`);
+  }
+  if (r.memory?.peakBytes !== undefined) parts.push(`peak ${formatBytes(r.memory.peakBytes)}`);
+  if (r.memory?.workspaceBytes !== undefined) parts.push(`workspace ${formatBytes(r.memory.workspaceBytes)}`);
+  return parts.length ? `<div class="estimate-note">${parts.join(' · ')}</div>` : '';
 }
 
 function renderAutoResult(payload: {
-  result: { fallbackUsed: boolean; ranked: { method: string; score: number; memory?: AutoMemoryPayload; warnings: string[] }[] };
+  result: { fallbackUsed: boolean; fallbackReason?: string; ranked: AutoRankedPayload[] };
 }): void {
   setAutoBusy(false);
-  const { ranked, fallbackUsed } = payload.result;
+  const { ranked, fallbackUsed, fallbackReason } = payload.result;
   if (!ranked.length) {
     resultEl.innerHTML = '<p>No strategies were ranked for this model and workload.</p>';
     resultEl.hidden = false;
     return;
   }
   resultEl.innerHTML = `
-    ${fallbackUsed ? '<div class="notice notice-warning">Hardware probe unavailable — ranking used fallback defaults.</div>' : ''}
+    ${fallbackUsed ? `<div class="notice notice-warning">Ranking used fallback defaults${fallbackReason ? `: ${escapeHtml(fallbackReason)}` : ' (no viable candidates or hardware probe unavailable).'}</div>` : ''}
     <ul class="ranked">${ranked
       .map(
         (r, i) => `<li><label>
@@ -181,13 +204,17 @@ function renderAutoResult(payload: {
                 }</div>`
               : ''
           }
+          ${autoDetails(r)}
           ${r.warnings.length ? `<ul class="warnings">${r.warnings.map((w) => `<li>${escapeHtml(w)}</li>`).join('')}</ul>` : ''}
         </label></li>`
       )
       .join('')}</ul>
-    <div class="actions"><button id="auto-insert-btn" type="button">Insert selected into editor</button></div>
+    <div class="actions"><button id="auto-insert-btn" type="button">Insert selected into editor</button> <button id="auto-explain-btn" type="button" class="secondary">Explain</button></div>
   `;
   resultEl.hidden = false;
+  document.getElementById('auto-explain-btn')?.addEventListener('click', () => {
+    vscode.postMessage({ type: 'explainAuto', values: readAutoForm() });
+  });
   document.getElementById('auto-insert-btn')?.addEventListener('click', () => {
     const selected = resultEl.querySelector('input[name="auto-method"]:checked') as HTMLInputElement | null;
     if (selected) vscode.postMessage({ type: 'insert', method: selected.value, knobs: {} });

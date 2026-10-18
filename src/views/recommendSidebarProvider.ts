@@ -16,7 +16,7 @@ import {
   RECOMMENDED_VERSION,
 } from '../python/versionCheck';
 import type { PackageFeature } from '../python/versionCheck';
-import { AutoRecommendError, getAutoRecommendation } from '../python/autoRecommendClient';
+import { AutoRecommendError, explainAutoRecommendation, getAutoRecommendation } from '../python/autoRecommendClient';
 import type { AutoObjective } from '../python/autoRecommendClient';
 import { EstimateMemoryError, getMemoryEstimate } from '../python/estimateMemoryClient';
 import { PROFILE_HARDWARE_ARGV } from '../hardware/profileHardware';
@@ -150,6 +150,9 @@ ${body}
       case 'cancelAuto':
         this.autoAbort?.abort();
         break;
+      case 'explainAuto':
+        await this.handleExplainAuto(message.values as RawAutoValues);
+        break;
       case 'estimateMemory':
         await this.handleEstimateMemory(message.values as RawAutoValues);
         break;
@@ -245,6 +248,28 @@ ${body}
     }
   }
 
+  private async handleExplainAuto(raw: RawAutoValues): Promise<void> {
+    const interpreterPath = await this.resolveInterpreterOrPrompt();
+    if (!interpreterPath || !raw.modelConfigPath) return;
+    if (!(await this.ensureFeature(interpreterPath, 'auto'))) return;
+    const log = this.recommendLog();
+    try {
+      const text = await explainAutoRecommendation(interpreterPath, {
+        modelConfigPath: raw.modelConfigPath,
+        objective: raw.objective as AutoObjective | undefined,
+        context: raw.context,
+        generation: raw.generation,
+        probe: raw.probe,
+      });
+      log.appendLine(`--- recommend --auto --explain (${new Date().toLocaleTimeString()}) ---`);
+      log.appendLine(text);
+      log.show(true);
+    } catch (err) {
+      const e = err as Partial<AutoRecommendError>;
+      this.post({ type: 'error', kind: 'cli-failed', message: (err as Error).message, stderr: e.stderr ?? '' });
+    }
+  }
+
   private async handleSubmitAuto(raw: RawAutoValues): Promise<void> {
     const interpreterPath = await this.resolveInterpreterOrPrompt();
     if (!interpreterPath) return;
@@ -297,7 +322,7 @@ ${body}
     if (!(await this.ensureFeature(interpreterPath, 'estimate-memory'))) return;
     try {
       const result = await getMemoryEstimate(interpreterPath, { modelConfigPath: raw.modelConfigPath, context: raw.context, top: 5 }, (method) =>
-        this.estimateLog().appendLine(`estimate-memory: dropped malformed strategy entry "${method}"`)
+        this.recommendLog().appendLine(`estimate-memory: dropped malformed strategy entry "${method}"`)
       );
       this.post({ type: 'memoryResult', result });
     } catch (err) {
@@ -306,10 +331,10 @@ ${body}
     }
   }
 
-  private estimateOutput?: vscode.OutputChannel;
+  private recommendOutput?: vscode.OutputChannel;
 
-  private estimateLog(): vscode.OutputChannel {
-    return (this.estimateOutput ??= vscode.window.createOutputChannel('VeloxQuant-MLX Estimate'));
+  private recommendLog(): vscode.OutputChannel {
+    return (this.recommendOutput ??= vscode.window.createOutputChannel('VeloxQuant-MLX Recommend'));
   }
 
   private handleInfer(): void {
