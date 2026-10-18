@@ -19,6 +19,9 @@ import {
 import type { PackageFeature } from '../python/versionCheck';
 import { AutoRecommendError, explainAutoRecommendation, getAutoRecommendation } from '../python/autoRecommendClient';
 import type { AutoObjective } from '../python/autoRecommendClient';
+import { getMethods } from '../python/methodsClient';
+import { EDITABLE_TYPES } from '../insert/knobEdits';
+import type { EditableField } from '../insert/knobEdits';
 import { AutoConfigError, getAutoConfig, shapeFromModelConfig } from '../python/autoConfigClient';
 import { EstimateMemoryError, getMemoryEstimate } from '../python/estimateMemoryClient';
 import { PROFILE_HARDWARE_ARGV } from '../hardware/profileHardware';
@@ -124,6 +127,12 @@ ${body}
         break;
       case 'insert':
         await this.handleInsert(message.method as string, message.knobs as Record<string, string | number | boolean>);
+        break;
+      case 'profileWith':
+        void vscode.commands.executeCommand('veloxquant.profileModel', {
+          method: message.method as string,
+          knobs: message.knobs as Record<string, string | number | boolean>,
+        });
         break;
       case 'copyCommand':
         await this.handleCopyCommand();
@@ -398,7 +407,8 @@ ${body}
     try {
       const response = await getRecommendation(interpreterPath, input);
       const docsUrl = await this.tryResolveDocsUrl(response.recommendation.method);
-      this.post({ type: 'result', response, docsUrl });
+      const fieldSchema = await this.fieldSchemaFor(interpreterPath, response.recommendation.method);
+      this.post({ type: 'result', response, docsUrl, fieldSchema });
     } catch (err) {
       if (err instanceof RecommendError) {
         if (err.kind === 'module-not-found') {
@@ -435,6 +445,24 @@ ${body}
   }
 
   /** Uses the local panel server's /api/methods docs_url field when reachable; omits the link otherwise (never guesses a slug). */
+  private methodsCache?: { interpreterPath: string; methods: Promise<Awaited<ReturnType<typeof getMethods>>['methods']> };
+
+  /** Editable `field_schema` entries for `method`; empty on installs that predate `methods --json`. */
+  private async fieldSchemaFor(interpreterPath: string, method: string): Promise<EditableField[]> {
+    try {
+      if (this.methodsCache?.interpreterPath !== interpreterPath) {
+        this.methodsCache = { interpreterPath, methods: getMethods(interpreterPath).then((r) => r.methods) };
+      }
+      const info = (await this.methodsCache.methods).find((m) => m.name === method);
+      return (info?.fieldSchema ?? [])
+        .filter((f) => EDITABLE_TYPES.includes(f.type))
+        .map((f) => ({ name: f.name, type: f.type, default: f.default, help: f.help }));
+    } catch {
+      this.methodsCache = undefined;
+      return [];
+    }
+  }
+
   private async tryResolveDocsUrl(method: string): Promise<string | undefined> {
     try {
       const port = vscode.workspace.getConfiguration('veloxquant').get<number>('panelPort', DEFAULT_PANEL_PORT);
