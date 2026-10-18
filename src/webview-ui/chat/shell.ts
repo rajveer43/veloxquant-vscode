@@ -161,9 +161,9 @@ window.addEventListener('message', (event: MessageEvent<{ type: string; [key: st
     case 'methods': {
       const select = document.getElementById('method-select') as HTMLSelectElement | null;
       if (select) {
-        const methods = message.methods as Array<{ name: string; family: string; blurb: string }>;
+        const methods = message.methods as Array<{ name: string; family: string; blurb: string; maturity?: string }>;
         select.innerHTML = '<option value="">Automatic method</option>' + methods.map((method) =>
-          `<option value="${escapeHtml(method.name)}" title="${escapeHtml(method.blurb)}">${escapeHtml(method.name)} · ${escapeHtml(method.family)}</option>`
+          `<option value="${escapeHtml(method.name)}" title="${escapeHtml(method.blurb)}">${escapeHtml(method.name)} · ${escapeHtml(method.family)}${method.maturity ? ` · ${escapeHtml(method.maturity)}` : ''}</option>`
         ).join('');
       }
       break;

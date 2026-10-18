@@ -8,7 +8,8 @@ import * as vscode from 'vscode';
 import { getVeloxQuantOptions } from '../sdk/client';
 import { ensureSdkReady } from '../sdk/versionGate';
 import { listLocal } from '../sdk/localModels';
-import { listServableMethods } from '../sdk/methods';
+import { listPickerMethods } from '../sdk/methodPicker';
+import { maturityBadge } from '../sdk/methods';
 
 export async function runBenchmarkCommand(): Promise<void> {
   if (!(await ensureSdkReady('serve'))) {
@@ -59,11 +60,11 @@ export async function runBenchmarkCommand(): Promise<void> {
 
 async function pickOptimizedMethod(): Promise<string | null | undefined> {
   try {
-    const methods = await listServableMethods();
+    const methods = await listPickerMethods();
     const choice = await vscode.window.showQuickPick(
       [
         { label: 'Automatic recommendation', value: null as string | null, detail: 'Let VeloxQuant select the optimized method.' },
-        ...methods.map((method) => ({ label: method.name, value: method.name as string | null, detail: `${method.family} · ${method.blurb}` })),
+        ...methods.map((method) => ({ label: method.name, value: method.name as string | null, detail: `${maturityBadge(method) ? `[${maturityBadge(method)}] ` : ''}${method.family} · ${method.blurb}` })),
       ],
       { placeHolder: 'Method to compare with the default' }
     );

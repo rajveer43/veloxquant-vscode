@@ -53,6 +53,19 @@ test('discoverServableMethods: falls back to the SDK on old installs or CLI fail
   assert.equal((await discoverServableMethods(deps('0.94.10', true), '0.93.0', isVersionSupported))[0].name, 'sdk');
 });
 
+import { arrangeForPicker } from '../../src/sdk/methods';
+
+test('arrangeForPicker: hides experimental by default and sorts stable first', () => {
+  const list = [{ n: 'a', maturity: 'experimental' as const }, { n: 'b', maturity: 'beta' as const }, { n: 'c', maturity: 'stable' as const }];
+  assert.deepEqual(arrangeForPicker(list, false).map((m) => m.n), ['c', 'b']);
+  assert.deepEqual(arrangeForPicker(list, true).map((m) => m.n), ['c', 'b', 'a']);
+});
+
+test('arrangeForPicker: methods without maturity are kept in order', () => {
+  const list = [{ n: 'a' }, { n: 'b' }] as Array<{ n: string; maturity?: 'stable' }>;
+  assert.deepEqual(arrangeForPicker(list, false).map((m) => m.n), ['a', 'b']);
+});
+
 test('parseMethods: reads capabilities.has_metal_kernel and lists Metal methods', () => {
   const r = parseMethods(payload([
     entry('kivi', { capabilities: { has_metal_kernel: true } }),

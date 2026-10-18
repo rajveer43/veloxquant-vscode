@@ -202,6 +202,11 @@
           "maximum": 65535,
           "description": "Port for the local VeloxQuant-MLX control panel server (loopback only, not configurable to any other host)."
         },
+        "veloxquant.showExperimentalMethods": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show methods the library labels experimental in the Chat, Benchmark and Profile pickers. Requires a VeloxQuant-MLX version that reports method maturity (0.93.0+)."
+        },
         "veloxquant.vlmPort": {
           "type": "integer",
           "default": 8080,
