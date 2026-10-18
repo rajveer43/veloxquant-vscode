@@ -16,6 +16,14 @@
 * apply feature-specific Python package version requirements
 * update the hosted playground URL and stale method, hardware, and model-management documentation
 
+## [0.6.1](https://github.com/rajveer43/veloxquant-vscode/compare/v0.6.0...v0.6.1) (2026-10-03)
+
+
+### Bug Fixes
+
+* **ci:** allow publishing an existing release tag via workflow_dispatch ([3c46d40](https://github.com/rajveer43/veloxquant-vscode/commit/3c46d40cbd9f7e2133eae0056f966ea3a392f980))
+* **ci:** allow publishing an existing release tag via workflow_dispatch ([20864e7](https://github.com/rajveer43/veloxquant-vscode/commit/20864e7c84ebfd21f6e8141f4ca742a21fb9b53a))
+
 ## [0.6.0](https://github.com/rajveer43/veloxquant-vscode/compare/v0.5.3...v0.6.0) (2026-10-02)
 
 
