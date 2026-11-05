@@ -25,6 +25,25 @@ export interface ProfilePayload {
 import { profileSetArgs } from '../insert/knobEdits';
 import type { KnobValue } from '../insert/snippetBuilder';
 
+/**
+ * Methods whose `KVCacheConfig` reads `bit_width_inlier` (veloxquant-mlx #901).
+ * `methods --json` `field_schema` lists that field for many more methods, so
+ * it can't be used here; the library's own "ignores bit_width_inlier" warning
+ * is the authoritative list.
+ */
+const BIT_WIDTH_METHODS: ReadonlySet<string> = new Set([
+  'kivi', 'kivi_sink', 'polar', 'spectral', 'turboquant_mse', 'turboquant_prod', 'turboquant_rvq',
+]);
+
+export function methodReadsBitWidth(method: string): boolean {
+  return BIT_WIDTH_METHODS.has(method);
+}
+
+/** Method line for the profile report; `profile` echoes `--bits` for every method, so only show it where it applies. */
+export function describeProfiledMethod(method: string, bits: number): string {
+  return methodReadsBitWidth(method) ? `\`${method}\` (${bits}-bit)` : `\`${method}\``;
+}
+
 export function buildProfileArgv(input: {
   model: string;
   method: string;

@@ -6,7 +6,7 @@ import { listPickerMethods } from '../sdk/methodPicker';
 import { maturityBadge } from '../sdk/methods';
 import { ensureSdkReady } from '../sdk/versionGate';
 import { formatBytes } from './format';
-import { buildProfileArgv, parseProfilePayload } from './profileProtocol';
+import { buildProfileArgv, describeProfiledMethod, methodReadsBitWidth, parseProfilePayload } from './profileProtocol';
 import type { ProfilePayload } from './profileProtocol';
 
 class ProfileCancelledError extends Error {
@@ -88,7 +88,7 @@ function profileMarkdown(payload: ProfilePayload): string {
   return [
     '# VeloxQuant-MLX Profile', '',
     `- Model: \`${payload.model}\``,
-    `- Method: \`${payload.method}\` (${payload.bits}-bit)`,
+    `- Method: ${describeProfiledMethod(payload.method, payload.bits)}`,
     `- Throughput: ${payload.summary.tokens_per_second.toFixed(1)} tokens/sec`,
     `- Total cache compute latency: ${payload.summary.total_latency_ms.toFixed(2)} ms`,
     `- Peak bytes reported: ${formatBytes(payload.summary.peak_memory_bytes)}`,
@@ -149,9 +149,12 @@ export async function profileModel(isAnotherModelActive: () => Promise<boolean>,
       );
   if (!method) return;
   const presetBits = presetServable ? preset.knobs.bit_width_inlier : undefined;
+  // `profile` always sets bit_width_inlier (default 2); only some methods read it, so don't ask for the rest.
   const bitsChoice = typeof presetBits === 'number'
     ? String(presetBits)
-    : await vscode.window.showQuickPick(['2', '1', '4'], { placeHolder: 'KV-cache bit width' });
+    : methodReadsBitWidth(method.label)
+      ? await vscode.window.showQuickPick(['2', '1', '4'], { placeHolder: 'KV-cache bit width' })
+      : '2';
   if (!bitsChoice) return;
   const prompt = await vscode.window.showInputBox({
     prompt: 'Prompt used for the profiling run', value: 'The quick brown fox jumps over the lazy dog.', ignoreFocusOut: true,
