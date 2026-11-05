@@ -1,5 +1,5 @@
 /**
- * Argv for `python -m veloxquant_mlx vlm-serve` (veloxquant-mlx >= 0.94).
+ * Argv for `python -m veloxquant_mlx vlm-serve` (veloxquant-mlx >= 0.95.0).
  * `--method/--bits/--seed` are consumed by VeloxQuant; everything else is
  * forwarded to the `mlx_vlm` server CLI (`--host`, `--port`, `--model`).
  * Kept free of `vscode` imports so it can be unit tested.
@@ -23,4 +23,9 @@ export function buildVlmServeArgv(options: VlmServeOptions): string[] {
 /** True when the process output says mlx-vlm (the optional `vlm` extra) is missing. */
 export function isMlxVlmMissing(output: string): boolean {
   return /vlm-serve requires mlx-vlm/.test(output);
+}
+
+/** True when the process output is the pre-0.95.0 crash: an MLX module put in a `WeakSet` (unhashable). */
+export function isVlmUnhashableCrash(output: string): boolean {
+  return /unhashable type/.test(output) && /vlm[-_]serve/.test(output);
 }
