@@ -50,7 +50,7 @@ test('parseAutoConfig rejects bad output', () => {
 });
 
 test('contract: real auto-config output parses', () => {
-  const file = path.join(__dirname, '..', 'fixtures', 'veloxquant-0.94.10', 'auto-config.json');
+  const file = path.join(__dirname, '..', 'fixtures', 'veloxquant-0.95.1', 'auto-config.json');
   const r = parseAutoConfig(fs.readFileSync(file, 'utf8'), shape);
   assert.ok(r.method.length > 0 && Object.keys(r.knobs).length > 0);
 });
