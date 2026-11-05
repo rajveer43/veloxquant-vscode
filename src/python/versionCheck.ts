@@ -14,10 +14,12 @@ export const MIN_HARDWARE_PROFILE_VERSION = '0.91.0';
 export const MIN_ESTIMATE_MEMORY_VERSION = '0.91.0';
 /** First release whose method registry carries the `maturity` field (veloxquant-mlx #782/#788). */
 export const MIN_METHOD_METADATA_VERSION = '0.93.0';
+/** First release where `vlm-serve` starts: 0.94.x crashes on an unhashable MLX module (veloxquant-mlx 0.95.0). */
+export const MIN_VLM_VERSION = '0.95.0';
 /** Library version the extension is aligned with (contracts, chip list, panel security checks). */
-export const RECOMMENDED_VERSION = '0.94.10';
+export const RECOMMENDED_VERSION = '0.95.1';
 
-export type PackageFeature = 'recommend' | 'panel' | 'serve' | 'profile' | 'worker' | 'auto' | 'profile-hardware' | 'estimate-memory';
+export type PackageFeature = 'recommend' | 'panel' | 'serve' | 'profile' | 'worker' | 'auto' | 'profile-hardware' | 'estimate-memory' | 'vlm';
 
 export const FEATURE_MINIMUMS: Record<PackageFeature, string> = {
   recommend: MIN_RECOMMEND_VERSION,
@@ -28,6 +30,7 @@ export const FEATURE_MINIMUMS: Record<PackageFeature, string> = {
   auto: MIN_AUTO_VERSION,
   'profile-hardware': MIN_HARDWARE_PROFILE_VERSION,
   'estimate-memory': MIN_ESTIMATE_MEMORY_VERSION,
+  vlm: MIN_VLM_VERSION,
 };
 
 export function parseVersion(version: string): [number, number, number] | undefined {

@@ -32,8 +32,12 @@ interface ChangedDefault {
  * Knobs whose library default changed, per method. Emitting them explicitly
  * keeps an inserted snippet behaving the same after the library is upgraded.
  */
-const CHANGED_DEFAULTS: Record<string, ChangedDefault[]> = {
+export const CHANGED_DEFAULTS: Record<string, ChangedDefault[]> = {
   xquant: [{ knob: 'xquant_residual_bits', value: 4, note: 'default was 0 before veloxquant-mlx 0.94 (0 degraded generation)' }],
+  skvq: [
+    { knob: 'skvq_bits_key', value: 4, note: 'default was 2 before veloxquant-mlx 0.94.22 (2-bit keys fail)' },
+    { knob: 'skvq_bits_value', value: 4, note: 'default was 2 before veloxquant-mlx 0.94.22' },
+  ],
   turboquant_prod: [{ knob: 'enable_vectorized_attend', value: true, note: 'now True by default (was False)' }],
   turboquant_mse: [{ knob: 'enable_vectorized_attend', value: true, note: 'now True by default (was False)' }],
 };

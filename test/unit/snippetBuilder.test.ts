@@ -84,3 +84,16 @@ test('buildFullSnippet: explains explicit defaults with a comment line', () => {
   const snippet = buildFullSnippet('xquant', {});
   assert.match(snippet, /# xquant_residual_bits set explicitly: .*\nconfig = KVCacheConfig\(.*xquant_residual_bits=4\)/);
 });
+
+test('buildFullSnippet: skvq emits both 4-bit knobs explicitly with notes', () => {
+  const snippet = buildFullSnippet('skvq', {});
+  assert.match(snippet, /# skvq_bits_key set explicitly: .*\n# skvq_bits_value set explicitly: /);
+  assert.match(snippet, /config = KVCacheConfig\(method='skvq', skvq_bits_key=4, skvq_bits_value=4\)/);
+});
+
+test('buildKVCacheConfigSnippet: a user-set skvq_bits_key is not duplicated', () => {
+  assert.equal(
+    buildKVCacheConfigSnippet('skvq', { skvq_bits_key: 2 }),
+    "KVCacheConfig(method='skvq', skvq_bits_key=2, skvq_bits_value=4)"
+  );
+});

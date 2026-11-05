@@ -2730,14 +2730,14 @@
         {
           "name": "skvq_bits_key",
           "type": "int",
-          "default": 2,
+          "default": 4,
           "optional": false,
           "help": null
         },
         {
           "name": "skvq_bits_value",
           "type": "int",
-          "default": 2,
+          "default": 4,
           "optional": false,
           "help": null
         },

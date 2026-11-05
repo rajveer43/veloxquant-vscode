@@ -5,10 +5,10 @@
  */
 import { ChildProcess, spawn } from 'node:child_process';
 import * as vscode from 'vscode';
-import { resolveInterpreter, promptSelectInterpreter } from '../python/interpreter';
-import { checkModuleImportable } from '../python/recommendClient';
+import { resolveInterpreter } from '../python/interpreter';
 import { listServableMethods } from '../sdk/methods';
-import { buildVlmServeArgv, isMlxVlmMissing } from './vlmServerArgs';
+import { ensureSdkReady } from '../sdk/versionGate';
+import { buildVlmServeArgv, isMlxVlmMissing, isVlmUnhashableCrash } from './vlmServerArgs';
 
 type VlmState = 'stopped' | 'starting' | 'running' | 'error';
 
@@ -34,16 +34,9 @@ export class VlmServerManager implements vscode.Disposable {
       void vscode.window.showInformationMessage(`VeloxQuant-MLX: VLM server already ${this.state} for ${this.model}.`);
       return;
     }
+    if (!(await ensureSdkReady('vlm'))) return;
     const resolution = await resolveInterpreter();
-    if (!resolution.path) {
-      const choice = await vscode.window.showWarningMessage('VeloxQuant-MLX: no Python interpreter resolved.', 'Select Interpreter');
-      if (choice === 'Select Interpreter') await promptSelectInterpreter();
-      return;
-    }
-    if (!(await checkModuleImportable(resolution.path))) {
-      void vscode.window.showErrorMessage(`VeloxQuant-MLX is not installed in ${resolution.path}.`);
-      return;
-    }
+    if (!resolution.path) return;
 
     const model = await vscode.window.showInputBox({
       title: 'Start VLM Server',
@@ -96,7 +89,9 @@ export class VlmServerManager implements vscode.Disposable {
       if (code !== 0) {
         const message = isMlxVlmMissing(this.output)
           ? 'VeloxQuant-MLX: vlm-serve needs mlx-vlm. Install it with: pip install mlx-vlm'
-          : `VeloxQuant-MLX: VLM server exited with code ${code}.`;
+          : isVlmUnhashableCrash(this.output)
+            ? 'VeloxQuant-MLX: vlm-serve crashed on a bug fixed in veloxquant-mlx 0.95.0. Upgrade veloxquant-mlx to 0.95.0 or newer.'
+            : `VeloxQuant-MLX: VLM server exited with code ${code}.`;
         void vscode.window.showErrorMessage(message);
       }
     });

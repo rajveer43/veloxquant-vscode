@@ -36,16 +36,23 @@ test('isVersionSupported: unparsable version fails open (treated as supported)',
 test('isVersionSupported against RECOMMENDED_VERSION: used to tell "already up to date" apart from "actually too old" when a CLI flag/value is rejected', () => {
   // An install already at or above RECOMMENDED_VERSION cannot be fixed by
   // upgrading, so a rejected flag/value there must not be blamed on version age.
-  assert.equal(isVersionSupported('0.94.12', RECOMMENDED_VERSION), true);
+  assert.equal(isVersionSupported('0.96.0', RECOMMENDED_VERSION), true);
   assert.equal(isVersionSupported(RECOMMENDED_VERSION, RECOMMENDED_VERSION), true);
   assert.equal(isVersionSupported('0.60.0', RECOMMENDED_VERSION), false);
 });
 
-test('recommended version notices: 0.91.0 is below, 0.94.10 is not', () => {
+test('recommended version notices: 0.94.10 is below, 0.95.1 is not', () => {
   assert.equal(isVersionSupported('0.91.0', RECOMMENDED_VERSION), false);
-  assert.equal(isVersionSupported('0.94.10', RECOMMENDED_VERSION), true);
-  assert.equal(classifyVersion('0.91.0', '0.42.0'), 'upgrade-recommended');
-  assert.equal(classifyVersion('0.94.10', '0.42.0'), 'supported');
+  assert.equal(isVersionSupported('0.94.10', RECOMMENDED_VERSION), false);
+  assert.equal(isVersionSupported('0.95.1', RECOMMENDED_VERSION), true);
+  assert.equal(classifyVersion('0.94.10', '0.42.0'), 'upgrade-recommended');
+  assert.equal(classifyVersion('0.95.1', '0.42.0'), 'supported');
+});
+
+test('vlm feature needs 0.95.0 (vlm-serve crashes on 0.94.x)', () => {
+  assert.equal(FEATURE_MINIMUMS.vlm, '0.95.0');
+  assert.equal(classifyVersion('0.94.22', FEATURE_MINIMUMS.vlm), 'unsupported');
+  assert.equal(classifyVersion('0.95.0', FEATURE_MINIMUMS.vlm), 'upgrade-recommended');
 });
 
 test('method metadata arrived in 0.93.0', () => {
@@ -62,6 +69,7 @@ test('feature minimums reflect the first upstream contracts', () => {
     auto: '0.91.0',
     'profile-hardware': '0.91.0',
     'estimate-memory': '0.91.0',
+    vlm: '0.95.0',
   });
 });
 
@@ -80,6 +88,6 @@ test('a prerelease does not satisfy the corresponding stable minimum', () => {
 test('classifyVersion distinguishes feature support and upgrade advice', () => {
   assert.equal(classifyVersion('0.67.9', '0.68.0'), 'unsupported');
   assert.equal(classifyVersion('0.68.0', '0.68.0'), 'upgrade-recommended');
-  assert.equal(classifyVersion('0.94.10', '0.68.0'), 'supported');
+  assert.equal(classifyVersion('0.95.1', '0.68.0'), 'supported');
   assert.equal(classifyVersion('unknown', '0.68.0'), 'unverifiable');
 });
