@@ -150,7 +150,7 @@ when the report finishes or fails.
   or `veloxquant.pythonPath`.
 - VeloxQuant-MLX requirements are checked per feature: **0.42.0** for
   Recommend, **0.46.0** for the panel/serve paths, **0.68.0** for profiling,
-  and **0.81.0** for worker diagnostics. **0.94.10 or newer is recommended**: it adds Recommend Auto mode, hardware
+  **0.81.0** for worker diagnostics, and **0.95.0** for the VLM server. **0.95.1 or newer is recommended**: it adds Recommend Auto mode, hardware
   profiling and KV memory estimates (0.91.0+), method maturity metadata
   (0.93.0+), the panel's cross-site request checks, and current cache,
   live-memory, and dynamic-field fixes.
