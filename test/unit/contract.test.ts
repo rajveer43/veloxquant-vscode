@@ -12,6 +12,7 @@ import { parseAutoRecommend } from '../../src/python/autoRecommendClient';
 import { parseEstimateMemory } from '../../src/python/estimateMemoryClient';
 import { parseRuleset } from '../../src/python/rulesetClient';
 import { parseProfileHardware } from '../../src/hardware/profileHardware';
+import { CHANGED_DEFAULTS } from '../../src/insert/snippetBuilder';
 
 const fixturesRoot = path.join(__dirname, '..', 'fixtures');
 
@@ -76,4 +77,24 @@ test('contract: legacy recommend --json keeps the keys the panel reads', () => {
 
 test('contract: methods --json reports has_metal_kernel for at least one method', () => {
   assert.ok(metalKernelMethods(parseMethods(read('methods.json')).methods).length > 0);
+});
+
+/** Knobs `methods --json` does not expose in `field_schema`; their defaults cannot be checked from fixtures. */
+const NOT_IN_FIELD_SCHEMA = new Set(['turboquant_prod.enable_vectorized_attend', 'turboquant_mse.enable_vectorized_attend']);
+
+test('contract: CHANGED_DEFAULTS match the library defaults in methods --json', () => {
+  const methods = json('methods.json').methods as Array<{
+    name: string;
+    field_schema: Array<{ name: string; default: unknown }>;
+  }>;
+  for (const [method, knobs] of Object.entries(CHANGED_DEFAULTS)) {
+    const entry = methods.find((m) => m.name === method);
+    assert.ok(entry, `methods.json has ${method}`);
+    for (const { knob, value } of knobs) {
+      const field: { name: string; default: unknown } | undefined = entry.field_schema.find((f) => f.name === knob);
+      if (!field && NOT_IN_FIELD_SCHEMA.has(`${method}.${knob}`)) continue;
+      assert.ok(field, `${method}.${knob} is in field_schema`);
+      assert.equal(field.default, value, `${method}.${knob} library default vs CHANGED_DEFAULTS`);
+    }
+  }
 });
