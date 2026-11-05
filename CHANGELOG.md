@@ -16,6 +16,17 @@
 * apply feature-specific Python package version requirements
 * update the hosted playground URL and stale method, hardware, and model-management documentation
 
+## [0.7.1](https://github.com/rajveer43/veloxquant-vscode/compare/v0.7.0...v0.7.1) (2026-11-05)
+
+
+### Bug Fixes
+
+* **insert:** emit explicit SKVQ bit knobs and guard CHANGED_DEFAULTS ([e63f3c1](https://github.com/rajveer43/veloxquant-vscode/commit/e63f3c1ff56823f570438b40e21c929a33d8dd06))
+* **profile:** only ask for a bit width on methods that read it ([165ba75](https://github.com/rajveer43/veloxquant-vscode/commit/165ba75966dcf3521a04b595dd345e32523a6a00))
+* sync with veloxquant-mlx 0.95.1 ([8204a78](https://github.com/rajveer43/veloxquant-vscode/commit/8204a78c1fa56ab85fea0acbf2c75e9af3c66f0d))
+* **versions:** align RECOMMENDED_VERSION with veloxquant-mlx 0.95.1 ([5269d66](https://github.com/rajveer43/veloxquant-vscode/commit/5269d662a549f2fee63b562bc36a5f9130e8e500))
+* **vlm:** gate Start VLM Server on veloxquant-mlx 0.95.0 ([7b2ff2c](https://github.com/rajveer43/veloxquant-vscode/commit/7b2ff2cd68496e4df30334c02c48f8086225f5b1))
+
 ## [0.7.0](https://github.com/rajveer43/veloxquant-vscode/compare/v0.6.1...v0.7.0) (2026-10-18)
 
 
